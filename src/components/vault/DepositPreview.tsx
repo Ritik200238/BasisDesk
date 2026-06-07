@@ -1,14 +1,23 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import { useAccount, useSignTypedData } from "wagmi";
 import { Button } from "@/components/ui";
 import { cn } from "@/lib/cn";
 import { formatPercent, formatPrice, formatQty, formatUsd } from "@/lib/format";
+import {
+  OrderSide,
+  VALUECHAIN_TESTNET_CHAIN_ID,
+  buildPerpMarketOrder,
+  nextNonce,
+  signNewOrder,
+} from "@/lib/sodex";
 import { computeDepositPreview } from "@/lib/vault";
 
 interface DepositPreviewProps {
   vaultName: string;
   symbol: string;
+  symbolId: number | null;
   baseAsset: string;
   markPrice: number;
   leverage: number;
@@ -19,8 +28,17 @@ interface DepositPreviewProps {
 
 const PRESETS = [500, 1000, 5000];
 
-// Interactive position preview. Everything is computed by the deterministic core from the
-// live mark price, so the figures the user reviews are the figures they would sign for.
+type ExecState = "idle" | "signing" | "submitting" | "done" | "error";
+
+// Convert a base-unit quantity to a decimal string with no trailing zeros (SoDEX rejects them)
+// and no scientific notation.
+function qtyToString(q: number): string {
+  return q.toFixed(8).replace(/0+$/, "").replace(/\.$/, "");
+}
+
+// Interactive position preview + (when a wallet is connected) sign-and-place. The hedge order
+// is signed in the user's wallet (non-custodial) and forwarded to SoDEX server-side; the
+// response is shown verbatim — a non-whitelisted account returns "account not found".
 export function DepositPreview(props: DepositPreviewProps) {
   const [amount, setAmount] = useState("1000");
   const [confirming, setConfirming] = useState(false);
@@ -74,12 +92,7 @@ export function DepositPreview(props: DepositPreviewProps) {
             </div>
             <div className="flex gap-1">
               {PRESETS.map((p) => (
-                <Button
-                  key={p}
-                  variant="ghost"
-                  className="h-9 px-2 text-micro"
-                  onClick={() => setAmt(String(p))}
-                >
+                <Button key={p} variant="ghost" className="h-9 px-2 text-micro" onClick={() => setAmt(String(p))}>
                   ${p.toLocaleString()}
                 </Button>
               ))}
@@ -118,13 +131,7 @@ export function DepositPreview(props: DepositPreviewProps) {
             Review deposit
           </Button>
         ) : (
-          preview && (
-            <ConfirmReceipt
-              props={props}
-              preview={preview}
-              onCancel={() => setConfirming(false)}
-            />
-          )
+          preview && <ConfirmReceipt props={props} preview={preview} onCancel={() => setConfirming(false)} />
         )}
       </div>
     </div>
@@ -140,6 +147,71 @@ function ConfirmReceipt({
   preview: ReturnType<typeof computeDepositPreview>;
   onCancel: () => void;
 }) {
+  const { isConnected } = useAccount();
+  const { signTypedDataAsync } = useSignTypedData();
+  const [accountId, setAccountId] = useState("");
+  const [exec, setExec] = useState<ExecState>("idle");
+  const [execMsg, setExecMsg] = useState("");
+  const [serverMsg, setServerMsg] = useState("");
+
+  async function handleExecute() {
+    if (props.symbolId == null) {
+      setExec("error");
+      setExecMsg("SoDEX market id is unavailable for this vault.");
+      return;
+    }
+    const accId = Number(accountId);
+    if (!Number.isInteger(accId) || accId <= 0) {
+      setExec("error");
+      setExecMsg("Enter your numeric SoDEX account id (from your testnet account).");
+      return;
+    }
+    setExecMsg("");
+    setServerMsg("");
+    try {
+      setExec("signing");
+      const order = buildPerpMarketOrder({
+        accountID: accId,
+        symbolID: props.symbolId,
+        clOrdID: `bd-${Date.now()}`,
+        side: OrderSide.SELL,
+        quantity: qtyToString(preview.qty),
+      });
+      const nonce = nextNonce();
+      const { wireSignature } = await signNewOrder({
+        request: order,
+        nonce,
+        chainId: VALUECHAIN_TESTNET_CHAIN_ID,
+        signTypedData: (args) => signTypedDataAsync(args),
+      });
+
+      setExec("submitting");
+      const res = await fetch("/api/sodex/place-order", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          request: order,
+          wireSignature,
+          nonce: nonce.toString(),
+          chainId: VALUECHAIN_TESTNET_CHAIN_ID,
+        }),
+      });
+      const data = (await res.json()) as { body?: { code?: number; error?: string } };
+      const code = data.body?.code;
+      if (code === 0) {
+        setServerMsg("Hedge order placed.");
+      } else {
+        setServerMsg(data.body?.error ?? "SoDEX rejected the order.");
+      }
+      setExec("done");
+    } catch (err) {
+      setExec("error");
+      setExecMsg(err instanceof Error ? err.message : "Signing was rejected or failed.");
+    }
+  }
+
+  const busy = exec === "signing" || exec === "submitting";
+
   return (
     <div className="flex flex-col gap-3 rounded-md border border-accent/30 bg-accent/5 p-3">
       <p className="text-body font-medium text-foreground">Review — {props.vaultName}</p>
@@ -155,18 +227,53 @@ function ConfirmReceipt({
           Entry fees about <strong className="text-foreground">{formatUsd(preview.entryFeesUsd, { dp: 2 })}</strong>; net
           price exposure ≈ $0.
         </li>
-        <li>If funding turns negative, the position pays funding until you redeem or it de-risks.</li>
         <li>
           Worst case: a venue outage or a gap through{" "}
           <strong className="text-foreground">{formatPrice(preview.liquidationPrice, { dp: 0 })}</strong> can break the
           hedge before it rebalances.
         </li>
       </ul>
-      <p className="rounded-md border border-border bg-surface px-3 py-2 text-micro leading-5 text-muted">
-        Order signing and submission are implemented and tested against the SoDEX SDK; they
-        activate once your wallet has SoDEX testnet access. Signing happens in your wallet —
-        BasisDesk never holds your keys or funds.
-      </p>
+
+      <div className="flex flex-col gap-2 border-t border-border pt-3">
+        {!isConnected ? (
+          <p className="text-micro leading-5 text-muted">
+            Connect your wallet (top right) to sign and place the short hedge. Signing happens in
+            your wallet — BasisDesk never holds your keys.
+          </p>
+        ) : (
+          <>
+            <label htmlFor="acct" className="text-micro uppercase tracking-wide text-muted">
+              SoDEX account id
+            </label>
+            <input
+              id="acct"
+              inputMode="numeric"
+              placeholder="from your testnet account"
+              value={accountId}
+              onChange={(e) => setAccountId(e.target.value)}
+              className="rounded-md border border-border-strong bg-background px-3 py-2 font-mono text-body text-foreground outline-none"
+            />
+            <Button onClick={handleExecute} disabled={busy}>
+              {exec === "signing"
+                ? "Sign in wallet…"
+                : exec === "submitting"
+                  ? "Placing…"
+                  : "Sign and place hedge"}
+            </Button>
+            {exec === "error" && <p className="text-micro text-down">{execMsg}</p>}
+            {exec === "done" && (
+              <p className={cn("text-micro", serverMsg === "Hedge order placed." ? "text-up" : "text-warn")}>
+                {serverMsg}
+              </p>
+            )}
+            <p className="text-micro leading-5 text-faint">
+              Submission needs a whitelisted SoDEX testnet account; otherwise the server returns
+              account-not-found. The signing and submission are verified against the SoDEX SDK.
+            </p>
+          </>
+        )}
+      </div>
+
       <Button variant="secondary" onClick={onCancel}>
         Back
       </Button>

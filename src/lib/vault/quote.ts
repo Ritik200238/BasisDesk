@@ -46,6 +46,7 @@ export function buildVaultQuote(
 
   return {
     vault,
+    symbolId: spec.id ?? null,
     markPrice,
     fundingRatePerInterval,
     fundingIntervalSec,

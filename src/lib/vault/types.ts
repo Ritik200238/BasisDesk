@@ -17,6 +17,8 @@ export interface VaultDef {
 // core math. All figures are computed in code, never by an LLM.
 export interface VaultQuote {
   vault: VaultDef;
+  // SoDEX numeric market id (from GET /markets/symbols), needed to place orders.
+  symbolId: number | null;
   markPrice: number;
   // Per-interval (hourly) funding rate from SoDEX. Positive = the short is paid.
   fundingRatePerInterval: number;

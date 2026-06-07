@@ -127,6 +127,7 @@ export default async function VaultDetailPage({ params }: { params: Promise<{ id
           <DepositPreview
             vaultName={vault.name}
             symbol={vault.symbol}
+            symbolId={quoteRes.quote.symbolId}
             baseAsset={vault.baseAsset}
             markPrice={quoteRes.quote.markPrice}
             leverage={vault.targetLeverage}

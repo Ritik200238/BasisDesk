@@ -81,6 +81,17 @@ pnpm test        # unit tests for the finance core, formatting, clients, flow re
 pnpm typecheck   # tsc --noEmit
 ```
 
+## Deploy
+
+Import the repo on Vercel (Next.js is auto-detected; pnpm is used from the lockfile). The base
+demo needs no env vars, since SoDEX funding is public. Add `SOSOVALUE_API_KEY` for the flow
+signal and news, `ANTHROPIC_API_KEY` for AI narration, and `CRON_SECRET` to protect the snapshot
+cron. `vercel.json` schedules `/api/cron/snapshot` daily to accumulate funding/flow history.
+
+The production build is verified green; if local dev shows a React hook error on Windows, the
+folder path is mixed-case — run from a consistently-cased path. A normal clone and Vercel are
+unaffected.
+
 ## Stack
 
 Next.js 15.5 (App Router), React 19, TypeScript, Tailwind v4, dnum, zod, wagmi/viem, Vitest.

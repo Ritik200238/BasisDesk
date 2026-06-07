@@ -1,4 +1,9 @@
+import { Suspense } from "react";
 import { Card } from "@/components/ui";
+import { VaultInsight, VaultInsightSkeleton } from "@/components/vault/VaultInsight";
+
+// Live SoDEX funding is read per request, so render dynamically.
+export const dynamic = "force-dynamic";
 
 const MECHANICS = [
   {
@@ -33,6 +38,10 @@ export default function Home() {
           to hold and when to step back.
         </p>
       </section>
+
+      <Suspense fallback={<VaultInsightSkeleton />}>
+        <VaultInsight />
+      </Suspense>
 
       <section className="grid gap-4 sm:grid-cols-3">
         {MECHANICS.map((m) => (

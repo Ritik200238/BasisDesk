@@ -7,8 +7,10 @@ reviewed receipt. The default answer to a new feature is "backlog it."
 
 - Live SoDEX funding -> market-neutral APR for BTC and ETH
 - SoSoValue ETF-flow regime -> de-risk signal on the vault (needs a key to light up)
+- SoSoValue news "why" under the flow regime (second load-bearing endpoint, needs a key)
 - Vault detail with deposit preview + confirmation risk receipt
 - Grounded AI narration of vault state (needs ANTHROPIC_API_KEY)
+- Accumulated funding/flow history moat: cron snapshot + track record (store swappable for a DB)
 
 ## Blocked (needs external access or the exact schema)
 

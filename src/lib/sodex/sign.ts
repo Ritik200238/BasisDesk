@@ -138,7 +138,10 @@ export async function signNewOrder(params: {
   return { wireSignature: toWireSignature(signature), payloadHash, payloadJson };
 }
 
-// Convenience: a single-leg market order. The vault's short hedge is a market SELL, SHORT side.
+// Convenience: a single-leg market order. The vault's short hedge is a market SELL; in
+// one-way position mode (the default) positionSide is BOTH and the direction comes from `side`.
+// Verified against the live testnet: LONG/SHORT here is rejected with "positionSide is invalid"
+// in one-way mode, while BOTH + SELL is accepted (then gated only on the account).
 // symbolID is the numeric market id from GET /markets/symbols; accountID and the nonce come
 // from the user's SoDEX account.
 export function buildPerpMarketOrder(params: {
@@ -147,7 +150,7 @@ export function buildPerpMarketOrder(params: {
   clOrdID: string;
   side: number;
   quantity: string;
-  positionSide: number;
+  positionSide?: number;
   reduceOnly?: boolean;
 }): NewOrderRequestInput {
   return {
@@ -162,7 +165,7 @@ export function buildPerpMarketOrder(params: {
         timeInForce: TimeInForce.IOC,
         quantity: params.quantity,
         reduceOnly: params.reduceOnly ?? false,
-        positionSide: params.positionSide,
+        positionSide: params.positionSide ?? PositionSide.BOTH,
       },
     ],
   };

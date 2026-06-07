@@ -17,8 +17,12 @@ reviewed receipt. The default answer to a new feature is "backlog it."
   matches the auth-doc example byte-for-byte; sign-to-recover round-trip; v-byte 27/28 -> 0/1;
   decimal trailing-zeros stripped); the wallet's signTypedData produces the identical digest,
   so signing is non-custodial
-- SoDEX order submission construction (POST /api/v1/perps/trade/orders, X-API-Sign/Nonce/Chain/
-  Key headers, params-only body, monotonic millisecond nonce), built and unit-tested per the SDK
+- SoDEX order submission (POST /api/v1/perps/trade/orders, X-API-Sign/Nonce/Chain/Key headers,
+  params-only body, monotonic millisecond nonce), built per the SDK and verified against the LIVE
+  testnet: a signed order is accepted and fully processed by the server (it passes field +
+  signature validation) and returns "account not found" for a non-whitelisted key — proving the
+  request is correct and only a whitelisted account is the gate. (This also caught a real bug:
+  one-way mode requires positionSide BOTH, not SHORT.)
 
 ## Verified
 

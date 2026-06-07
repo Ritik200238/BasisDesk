@@ -153,10 +153,10 @@ describe("SoDEX order signing", () => {
       clOrdID: "hedge-btc-1",
       side: OrderSide.SELL,
       quantity: "0.01",
-      positionSide: PositionSide.SHORT,
     });
     expect(req.orders[0].type).toBe(OrderType.MARKET);
     expect(req.orders[0].side).toBe(OrderSide.SELL);
+    expect(req.orders[0].positionSide).toBe(PositionSide.BOTH); // one-way mode (verified live)
 
     const nonce = BigInt(5);
     const { wireSignature, payloadHash } = await signNewOrder({

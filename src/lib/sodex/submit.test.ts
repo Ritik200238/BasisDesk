@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { OrderSide, PositionSide, buildPerpMarketOrder, newOrderBodyJson } from "./sign";
+import { OrderSide, buildPerpMarketOrder, newOrderBodyJson } from "./sign";
 import { buildPerpsOrderSubmission, nextNonce } from "./submit";
 
 const req = buildPerpMarketOrder({
@@ -8,7 +8,6 @@ const req = buildPerpMarketOrder({
   clOrdID: "hedge-1",
   side: OrderSide.SELL,
   quantity: "0.01",
-  positionSide: PositionSide.SHORT,
 });
 
 // A placeholder 66-byte wire signature (0x01 + 65 bytes).

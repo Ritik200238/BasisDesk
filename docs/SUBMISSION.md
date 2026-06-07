@@ -32,7 +32,8 @@ docs/CLAIMS (data lineage), docs/SCOPE.
 
 ## 3. Demo
 
-[ live URL after Vercel import — base demo needs no env vars; SoDEX funding is live immediately ]
+https://basisdesk.vercel.app — live SoDEX funding renders immediately (no keys needed). Add a
+SoSoValue key for the flow signal + news, and ANTHROPIC_API_KEY for AI narration.
 
 ## 4. Video
 

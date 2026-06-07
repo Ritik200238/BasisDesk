@@ -1,5 +1,7 @@
 # BasisDesk
 
+**Live: https://basisdesk.vercel.app**
+
 Delta-neutral yield, on-chain. Hold the asset, short the matching SoDEX perpetual in equal
 size, and earn the funding rate while net price exposure stays near zero. SoSoValue spot-ETF
 flow data sets the de-risk signal.

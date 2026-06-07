@@ -12,10 +12,22 @@ const nextConfig: NextConfig = {
     ignoreDuringBuilds: true,
   },
   webpack: (config) => {
-    // wagmi's optional Tempo connector dynamically imports an "accounts" module we do not
-    // use; resolve it to empty so the build does not fail on the missing optional dependency.
+    // wagmi's connector index imports every connector, several of which dynamically import
+    // optional peer deps we do not use (we only use injected()). Resolve them to empty so the
+    // build has no missing-module warnings.
     config.resolve = config.resolve ?? {};
-    config.resolve.fallback = { ...(config.resolve.fallback ?? {}), accounts: false };
+    config.resolve.fallback = {
+      ...(config.resolve.fallback ?? {}),
+      accounts: false,
+      porto: false,
+      "porto/internal": false,
+      "@base-org/account": false,
+      "@coinbase/wallet-sdk": false,
+      "@metamask/connect-evm": false,
+      "@safe-global/safe-apps-sdk": false,
+      "@safe-global/safe-apps-provider": false,
+      "@walletconnect/ethereum-provider": false,
+    };
     return config;
   },
 };

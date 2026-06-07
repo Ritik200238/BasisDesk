@@ -1,14 +1,15 @@
-// SoDEX order signing, ported from the official Go SDK (github.com/sodex-tech/sodex-go-sdk-public,
-// common/types/eip712.go + perps/types/new_order_request.go). This is the real scheme, not a guess.
+// SoDEX order signing, ported from the official SDK (github.com/sodex-tech/sodex-go-sdk-public:
+// common/types/eip712.go, perps/types/new_order_request.go, references/authentication.md).
+// This is the real scheme, read from source, not guessed.
 //
 // Pipeline:
-//   1. payloadHash = keccak256( compact JSON of { type, params } )   // Go json.Marshal order, omitempty, decimals as strings
+//   1. payloadHash = keccak256( compact JSON of { type, params } )   // Go field order, omitempty, decimals as strings (no trailing zeros)
 //   2. EIP-712 sign ExchangeAction(bytes32 payloadHash, uint64 nonce) under domain
 //      { name: "futures", version: "1", chainId, verifyingContract: 0x0 }
-//   3. wire signature = 0x01 (SignatureTypeEIP712) ++ 65-byte ECDSA signature   // 66 bytes
+//   3. convert the signature v byte 27/28 -> 0/1, then prepend 0x01 (SignatureTypeEIP712) -> 66-byte wire sig
 //
-// viem's signTypedData computes the identical digest, so signing is non-custodial (the user's
-// wallet signs); this module never sees a private key.
+// viem's signTypedData computes the identical digest, so signing is non-custodial (the wallet
+// signs; this module never sees a private key). The wire signature goes in the X-API-Sign header.
 
 import { type Hex, keccak256, toBytes } from "viem";
 
@@ -22,7 +23,6 @@ export function perpsDomain(chainId: number) {
   return { name: PERPS_DOMAIN_NAME, version: "1", chainId, verifyingContract: ZERO_ADDRESS } as const;
 }
 
-// The single EIP-712 struct the user actually signs (the action data is hashed into payloadHash).
 export const EXCHANGE_ACTION_TYPES = {
   ExchangeAction: [
     { name: "payloadHash", type: "bytes32" },
@@ -43,7 +43,6 @@ export interface RawOrderInput {
   side: number;
   type: number;
   timeInForce: number;
-  // Decimal fields are JSON strings to match the server's string-typed API. omitempty.
   price?: string;
   quantity?: string;
   funds?: string;
@@ -60,9 +59,15 @@ export interface NewOrderRequestInput {
   orders: RawOrderInput[];
 }
 
-// Build a RawOrder object with keys in the exact Go struct-field order, omitting unset
-// omitempty fields, so JSON.stringify reproduces Go's json.Marshal byte-for-byte (our field
-// values never contain &, <, or > so JS and Go escaping agree).
+// SoDEX rejects decimal strings with trailing zeros ("0.4060" fails, "0.406" works). The
+// signing payload and the HTTP body must use identical normalized values.
+export function normalizeDecimalString(s: string): string {
+  if (!s.includes(".")) return s;
+  return s.replace(/0+$/, "").replace(/\.$/, "");
+}
+
+// One RawOrder with keys in the exact Go struct-field order, omitempty fields omitted when
+// unset, decimals normalized — so JSON.stringify reproduces Go's json.Marshal byte-for-byte.
 function rawOrderCanonical(o: RawOrderInput): Record<string, unknown> {
   const out: Record<string, unknown> = {};
   out.clOrdID = o.clOrdID;
@@ -70,10 +75,10 @@ function rawOrderCanonical(o: RawOrderInput): Record<string, unknown> {
   out.side = o.side;
   out.type = o.type;
   out.timeInForce = o.timeInForce;
-  if (o.price !== undefined) out.price = o.price;
-  if (o.quantity !== undefined) out.quantity = o.quantity;
-  if (o.funds !== undefined) out.funds = o.funds;
-  if (o.stopPrice !== undefined) out.stopPrice = o.stopPrice;
+  if (o.price !== undefined) out.price = normalizeDecimalString(o.price);
+  if (o.quantity !== undefined) out.quantity = normalizeDecimalString(o.quantity);
+  if (o.funds !== undefined) out.funds = normalizeDecimalString(o.funds);
+  if (o.stopPrice !== undefined) out.stopPrice = normalizeDecimalString(o.stopPrice);
   if (o.stopType !== undefined) out.stopType = o.stopType;
   if (o.triggerType !== undefined) out.triggerType = o.triggerType;
   out.reduceOnly = o.reduceOnly;
@@ -81,21 +86,24 @@ function rawOrderCanonical(o: RawOrderInput): Record<string, unknown> {
   return out;
 }
 
-// The exact JSON that is keccak256-hashed into payloadHash.
+function newOrderParams(req: NewOrderRequestInput): Record<string, unknown> {
+  return { accountID: req.accountID, symbolID: req.symbolID, orders: req.orders.map(rawOrderCanonical) };
+}
+
+// The JSON that is keccak256-hashed into payloadHash (includes the { type, params } wrapper).
 export function newOrderActionPayloadJson(req: NewOrderRequestInput): string {
-  const params = {
-    accountID: req.accountID,
-    symbolID: req.symbolID,
-    orders: req.orders.map(rawOrderCanonical),
-  };
-  return JSON.stringify({ type: "newOrder", params });
+  return JSON.stringify({ type: "newOrder", params: newOrderParams(req) });
+}
+
+// The HTTP request body: params only, no type wrapper, same field order as the signing payload.
+export function newOrderBodyJson(req: NewOrderRequestInput): string {
+  return JSON.stringify(newOrderParams(req));
 }
 
 export function computePayloadHash(actionJson: string): Hex {
   return keccak256(toBytes(actionJson));
 }
 
-// A wallet-agnostic typed-data signer (wagmi's signTypedData, a viem walletClient/account, etc.).
 export type SignTypedDataFn = (args: {
   domain: { name: string; version: string; chainId: number; verifyingContract: Hex };
   types: typeof EXCHANGE_ACTION_TYPES;
@@ -103,9 +111,16 @@ export type SignTypedDataFn = (args: {
   message: { payloadHash: Hex; nonce: bigint };
 }) => Promise<Hex>;
 
-// Sign a perps newOrder. Returns the 66-byte wire signature (0x01 ++ 65-byte ECDSA) and the
-// payloadHash. Submission (attaching X-API-Key/X-API-Sign/X-API-Nonce and POSTing) is a thin
-// layer gated on a whitelisted API key.
+// Convert a 65-byte viem signature (v = 27/28) into the SoDEX 66-byte wire format:
+// 0x01 ++ r ++ s ++ v(0/1).
+function toWireSignature(viemSignature: Hex): Hex {
+  const hex = viemSignature.slice(2); // 130 hex chars = 65 bytes
+  const rs = hex.slice(0, 128);
+  const v = Number.parseInt(hex.slice(128, 130), 16);
+  const vNormalized = (v >= 27 ? v - 27 : v) & 0x01;
+  return `0x01${rs}${vNormalized.toString(16).padStart(2, "0")}` as Hex;
+}
+
 export async function signNewOrder(params: {
   request: NewOrderRequestInput;
   nonce: bigint;
@@ -120,14 +135,12 @@ export async function signNewOrder(params: {
     primaryType: "ExchangeAction",
     message: { payloadHash, nonce: params.nonce },
   });
-  // Prepend SignatureTypeEIP712 (0x01) to the 65-byte ECDSA signature.
-  const wireSignature = `0x01${signature.slice(2)}` as Hex;
-  return { wireSignature, payloadHash, payloadJson };
+  return { wireSignature: toWireSignature(signature), payloadHash, payloadJson };
 }
 
-// Convenience: a single-leg market order. The vault's short hedge is a market SELL on the
-// SHORT position side. symbolID is the numeric market id from GET /markets/symbols; accountID
-// and the nonce come from the user's SoDEX account (both require testnet access).
+// Convenience: a single-leg market order. The vault's short hedge is a market SELL, SHORT side.
+// symbolID is the numeric market id from GET /markets/symbols; accountID and the nonce come
+// from the user's SoDEX account.
 export function buildPerpMarketOrder(params: {
   accountID: number;
   symbolID: number;

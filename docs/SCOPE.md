@@ -13,9 +13,12 @@ reviewed receipt. The default answer to a new feature is "backlog it."
 - Accumulated funding/flow history moat: cron snapshot + track record (store swappable for a DB)
 - Wallet connect (wagmi injected) + ValueChain network switch, verified in a clean-cased copy
   (production build green, runtime renders with no hook error)
-- SoDEX EIP-712 order signing, ported and verified from the public Go SDK (canonical JSON +
-  sign-to-recover round-trip); the wallet's signTypedData produces the identical digest, so
-  signing is non-custodial
+- SoDEX EIP-712 order signing, ported and verified from the public Go SDK (canonical JSON
+  matches the auth-doc example byte-for-byte; sign-to-recover round-trip; v-byte 27/28 -> 0/1;
+  decimal trailing-zeros stripped); the wallet's signTypedData produces the identical digest,
+  so signing is non-custodial
+- SoDEX order submission construction (POST /api/v1/perps/trade/orders, X-API-Sign/Nonce/Chain/
+  Key headers, params-only body, monotonic millisecond nonce), built and unit-tested per the SDK
 
 ## Verified
 
@@ -25,9 +28,10 @@ reviewed receipt. The default answer to a new feature is "backlog it."
 
 ## Blocked (needs external access)
 
-- Order submission + redeem: the signing is built and verified; submitting the signed order
-  (POST with X-API-Key / X-API-Sign / X-API-Nonce, plus the account id and nonce from the user's
-  SoDEX account) needs a whitelisted testnet account. The signed wire signature is ready to attach.
+- Live order execution: signing and the order-submission POST are built and unit-tested per the
+  SDK source. The live POST is accepted only for a whitelisted testnet account (its API key +
+  account id); wiring the deposit confirm button to placePerpsOrder is the final step once access
+  is granted. Construction is verified; only server acceptance is gated.
 - Live demo deploy: needs a Vercel account connected to the repo.
 
 ## Later

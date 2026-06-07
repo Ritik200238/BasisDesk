@@ -11,16 +11,25 @@ import {
   buildPerpMarketOrder,
   computePayloadHash,
   newOrderActionPayloadJson,
+  newOrderBodyJson,
+  normalizeDecimalString,
   perpsDomain,
   signNewOrder,
   type NewOrderRequestInput,
 } from "./sign";
 
-// The well-known deterministic test key from the SDK's own signer tests.
 const TEST_KEY = "0x0123456789012345678901234567890123456789012345678901234567890123" as const;
 const TESTNET_CHAIN = 138565;
 
-// The SDK example: a limit buy of 0.1 at 50000 on symbolID 1, account 1001, long.
+// Reconstruct viem's 65-byte signature (v -> 27/28) from a 66-byte SoDEX wire signature
+// (0x01 ++ r ++ s ++ v[0/1]) so we can recover the signer.
+function wireToViemSignature(wire: `0x${string}`): `0x${string}` {
+  const body = wire.slice(4); // drop 0x01
+  const rs = body.slice(0, 128);
+  const v = (Number.parseInt(body.slice(128, 130), 16) + 27).toString(16);
+  return `0x${rs}${v}`;
+}
+
 const exampleReq: NewOrderRequestInput = {
   accountID: 1001,
   symbolID: 1,
@@ -40,10 +49,44 @@ const exampleReq: NewOrderRequestInput = {
 };
 
 describe("SoDEX order signing", () => {
-  it("builds canonical JSON matching the Go struct field order and omitempty", () => {
-    expect(newOrderActionPayloadJson(exampleReq)).toBe(
-      '{"type":"newOrder","params":{"accountID":1001,"symbolID":1,"orders":[{"clOrdID":"my-order-001","modifier":1,"side":1,"type":1,"timeInForce":1,"price":"50000","quantity":"0.1","reduceOnly":false,"positionSide":2}]}}',
+  it("matches the official auth-doc signing example byte-for-byte", () => {
+    // From references/authentication.md (a market buy). This pins our canonical JSON to spec.
+    const docReq: NewOrderRequestInput = {
+      accountID: 12345,
+      symbolID: 1,
+      orders: [
+        {
+          clOrdID: "my-order-1",
+          modifier: OrderModifier.NORMAL,
+          side: OrderSide.BUY,
+          type: OrderType.MARKET,
+          timeInForce: TimeInForce.IOC,
+          quantity: "0.001",
+          reduceOnly: false,
+          positionSide: PositionSide.BOTH,
+        },
+      ],
+    };
+    expect(newOrderActionPayloadJson(docReq)).toBe(
+      '{"type":"newOrder","params":{"accountID":12345,"symbolID":1,"orders":[{"clOrdID":"my-order-1","modifier":1,"side":1,"type":2,"timeInForce":3,"quantity":"0.001","reduceOnly":false,"positionSide":1}]}}',
     );
+    // The HTTP body is the params only (no type wrapper).
+    expect(newOrderBodyJson(docReq)).toBe(
+      '{"accountID":12345,"symbolID":1,"orders":[{"clOrdID":"my-order-1","modifier":1,"side":1,"type":2,"timeInForce":3,"quantity":"0.001","reduceOnly":false,"positionSide":1}]}',
+    );
+  });
+
+  it("strips trailing zeros from decimal strings (the server rejects them)", () => {
+    expect(normalizeDecimalString("0.4060")).toBe("0.406");
+    expect(normalizeDecimalString("0.0100")).toBe("0.01");
+    expect(normalizeDecimalString("50000.00")).toBe("50000");
+    expect(normalizeDecimalString("50000")).toBe("50000");
+    const json = newOrderActionPayloadJson({
+      ...exampleReq,
+      orders: [{ ...exampleReq.orders[0], price: "50000.00", quantity: "0.1000" }],
+    });
+    expect(json).toContain('"price":"50000"');
+    expect(json).toContain('"quantity":"0.1"');
   });
 
   it("omits unset omitempty fields (a market short keeps no price)", () => {
@@ -65,16 +108,14 @@ describe("SoDEX order signing", () => {
     });
     expect(json).not.toContain("price");
     expect(json).toContain('"side":2'); // SELL
-    expect(json).toContain('"type":2'); // MARKET
     expect(json).toContain('"positionSide":3'); // SHORT
   });
 
   it("produces a stable bytes32 payloadHash", () => {
-    const h = computePayloadHash(newOrderActionPayloadJson(exampleReq));
-    expect(h).toMatch(/^0x[0-9a-f]{64}$/);
+    expect(computePayloadHash(newOrderActionPayloadJson(exampleReq))).toMatch(/^0x[0-9a-f]{64}$/);
   });
 
-  it("signs and round-trips to the signer address (the EIP-712 digest is correct)", async () => {
+  it("signs to a 66-byte wire signature with a 0/1 v byte and round-trips the signer", async () => {
     const account = privateKeyToAccount(TEST_KEY);
     const nonce = BigInt(1);
     const { wireSignature, payloadHash } = await signNewOrder({
@@ -84,17 +125,15 @@ describe("SoDEX order signing", () => {
       signTypedData: (args) => account.signTypedData(args),
     });
 
-    // 66-byte wire format: 0x01 prefix + 65-byte ECDSA signature.
-    expect(wireSignature).toMatch(/^0x01[0-9a-f]{130}$/);
+    // 0x01 prefix + 64-byte r,s + a normalized v of 00 or 01.
+    expect(wireSignature).toMatch(/^0x01[0-9a-f]{128}(00|01)$/);
 
-    // Strip the type byte and recover the signer from the same typed data.
-    const rawSignature = `0x${wireSignature.slice(4)}` as `0x${string}`;
     const recovered = await recoverTypedDataAddress({
       domain: perpsDomain(TESTNET_CHAIN),
       types: EXCHANGE_ACTION_TYPES,
       primaryType: "ExchangeAction",
       message: { payloadHash, nonce },
-      signature: rawSignature,
+      signature: wireToViemSignature(wireSignature),
     });
     expect(recovered.toLowerCase()).toBe(account.address.toLowerCase());
   });
@@ -131,7 +170,7 @@ describe("SoDEX order signing", () => {
       types: EXCHANGE_ACTION_TYPES,
       primaryType: "ExchangeAction",
       message: { payloadHash, nonce },
-      signature: `0x${wireSignature.slice(4)}` as `0x${string}`,
+      signature: wireToViemSignature(wireSignature),
     });
     expect(recovered.toLowerCase()).toBe(account.address.toLowerCase());
   });

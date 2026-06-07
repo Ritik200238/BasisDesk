@@ -21,7 +21,7 @@ export async function VaultInsight() {
           ETF flows set the de-risk signal. No wallet needed to look.
         </p>
       </div>
-      <div className="grid gap-4 sm:grid-cols-2">
+      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
         {quotes.map((q, i) => (
           <VaultQuoteCard key={q.ok ? q.quote.vault.id : q.vault.id} result={q} flow={flows[i]} />
         ))}
@@ -38,8 +38,8 @@ export function VaultInsightSkeleton() {
         <h2 className="text-lead font-medium text-foreground">Live market-neutral yield</h2>
         <p className="text-body text-muted">Reading live funding and ETF flows…</p>
       </div>
-      <div className="grid gap-4 sm:grid-cols-2">
-        {[0, 1].map((i) => (
+      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+        {[0, 1, 2].map((i) => (
           <Card key={i}>
             <div className="flex flex-col gap-4">
               <Skeleton className="h-3 w-40" />

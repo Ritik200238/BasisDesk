@@ -5,4 +5,4 @@ export {
   type FlowDirection,
   type FlowStance,
 } from "./regime";
-export { getFlowRegime, type FlowRegimeResult } from "./data";
+export { getFlowRegime, getTopFlowNews, type FlowRegimeResult, type FlowNewsResult } from "./data";

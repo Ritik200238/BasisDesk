@@ -3,7 +3,8 @@ import { notFound } from "next/navigation";
 import { Badge, type BadgeVariant, Card, ErrorState, Stat, ValueWithProvenance } from "@/components/ui";
 import { DepositPreview } from "@/components/vault/DepositPreview";
 import type { RiskState } from "@/lib/core";
-import { escalateForFlow, getFlowRegime } from "@/lib/flows";
+import { escalateForFlow, getFlowRegime, getTopFlowNews, type FlowNewsResult } from "@/lib/flows";
+import { getHistorySummary, type HistorySummary } from "@/lib/history";
 import { formatBps, formatCompactUsd, formatPercent, formatPrice, formatSignedUsd } from "@/lib/format";
 import { getVaultById, getVaultQuote } from "@/lib/vault";
 import { Suspense } from "react";
@@ -20,9 +21,11 @@ export default async function VaultDetailPage({ params }: { params: Promise<{ id
   const vault = getVaultById(id);
   if (!vault) notFound();
 
-  const [quoteRes, flow] = await Promise.all([
+  const [quoteRes, flow, news, history] = await Promise.all([
     getVaultQuote(vault),
     getFlowRegime(vault.baseAsset),
+    getTopFlowNews(vault.baseAsset),
+    getHistorySummary(vault.baseAsset),
   ]);
 
   const flowStance = flow.state === "ok" ? flow.regime.stance : undefined;
@@ -108,7 +111,7 @@ export default async function VaultDetailPage({ params }: { params: Promise<{ id
               />
             </div>
 
-            <FlowBlock flow={flow} />
+            <FlowBlock flow={flow} news={news} />
 
             {narrationInput && (
               <Suspense fallback={<VaultNarrationSkeleton />}>
@@ -117,6 +120,8 @@ export default async function VaultDetailPage({ params }: { params: Promise<{ id
             )}
 
             <p className="text-micro leading-5 text-muted">{vault.blurb}</p>
+
+            <TrackRecord history={history} />
           </div>
 
           <DepositPreview
@@ -135,7 +140,13 @@ export default async function VaultDetailPage({ params }: { params: Promise<{ id
   );
 }
 
-function FlowBlock({ flow }: { flow: Awaited<ReturnType<typeof getFlowRegime>> }) {
+function FlowBlock({
+  flow,
+  news,
+}: {
+  flow: Awaited<ReturnType<typeof getFlowRegime>>;
+  news: FlowNewsResult;
+}) {
   return (
     <div className="rounded-md border border-border bg-surface px-4 py-3">
       <span className="text-micro uppercase tracking-wide text-muted">
@@ -166,6 +177,17 @@ function FlowBlock({ flow }: { flow: Awaited<ReturnType<typeof getFlowRegime>> }
       ) : (
         <p className="mt-1.5 text-micro text-muted">SoSoValue flow unavailable ({flow.error.kind}).</p>
       )}
+      {news.state === "ok" && news.item.title && (
+        <a
+          href={news.item.source_link}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="mt-2 block border-t border-border pt-2 text-micro leading-5 text-muted transition-colors hover:text-accent"
+        >
+          <span className="text-faint">Why: </span>
+          {news.item.title}
+        </a>
+      )}
     </div>
   );
 }
@@ -176,5 +198,26 @@ function SummaryField({ label, value }: { label: string; value: string }) {
       <span className="text-micro uppercase tracking-wide text-muted">{label}</span>
       <span className="font-mono text-lead text-foreground">{value}</span>
     </div>
+  );
+}
+
+function TrackRecord({ history }: { history: HistorySummary }) {
+  if (history.count === 0) {
+    return (
+      <p className="text-micro leading-5 text-faint">
+        Track record begins now. BasisDesk logs each funding reading to build history beyond
+        SoSoValue&apos;s ~30-day window.
+      </p>
+    );
+  }
+  const since = history.firstTs ? new Date(history.firstTs).toISOString().slice(0, 10) : "—";
+  return (
+    <p className="text-micro leading-5 text-muted">
+      {history.count} funding readings logged since {since}
+      {history.fundingAprChange != null
+        ? ` · ${formatPercent(history.fundingAprChange, { signed: true })} since the last reading`
+        : ""}
+      .
+    </p>
   );
 }

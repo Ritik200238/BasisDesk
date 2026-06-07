@@ -11,15 +11,21 @@ reviewed receipt. The default answer to a new feature is "backlog it."
 - Vault detail with deposit preview + confirmation risk receipt
 - Grounded AI narration of vault state (needs ANTHROPIC_API_KEY)
 - Accumulated funding/flow history moat: cron snapshot + track record (store swappable for a DB)
+- Wallet connect (wagmi injected) + ValueChain network switch, verified in a clean-cased copy
+  (production build green, runtime renders with no hook error)
+
+## Verified
+
+- Production build is green and all routes render in a consistently-cased checkout (mirrors the
+  Linux deploy environment). A mixed-case Windows folder path is the only env that loads React
+  twice; a normal clone or Vercel is unaffected.
 
 ## Blocked (needs external access or the exact schema)
 
-- Wallet connect (wagmi): builds, but a local Windows path-casing quirk loads React twice and
-  breaks hooks; verify on the Linux deploy environment before shipping.
 - SoDEX EIP-712 order signing: the exact typed-data schema is abstracted inside SoDEX's Go SDK
   and not published; do not guess a signing scheme. Obtain it from a whitelisted account or the
   SDK source, then build.
-- On-chain execution + redeem: gated on the SoDEX testnet whitelist plus the two items above.
+- On-chain execution + redeem: gated on the SoDEX testnet whitelist plus the signing schema.
 - Live demo deploy: needs a Vercel account connected to the repo.
 
 ## Later

@@ -11,6 +11,13 @@ const nextConfig: NextConfig = {
     // production builds are not gated on ESLint config loading.
     ignoreDuringBuilds: true,
   },
+  webpack: (config) => {
+    // wagmi's optional Tempo connector dynamically imports an "accounts" module we do not
+    // use; resolve it to empty so the build does not fail on the missing optional dependency.
+    config.resolve = config.resolve ?? {};
+    config.resolve.fallback = { ...(config.resolve.fallback ?? {}), accounts: false };
+    return config;
+  },
 };
 
 export default nextConfig;

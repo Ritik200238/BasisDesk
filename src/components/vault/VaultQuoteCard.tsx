@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { Badge, type BadgeVariant, Card, ErrorState, Stat, ValueWithProvenance } from "@/components/ui";
 import type { RiskState } from "@/lib/core";
 import { escalateForFlow, type FlowRegimeResult, type FlowStance } from "@/lib/flows";
@@ -97,6 +98,13 @@ export function VaultQuoteCard({
         <FlowSection flow={flow} />
 
         <p className="text-micro leading-5 text-muted">{q.vault.blurb}</p>
+
+        <Link
+          href={`/vaults/${q.vault.id}`}
+          className="text-micro font-medium text-accent transition-colors hover:text-accent-strong"
+        >
+          Open vault and preview a position →
+        </Link>
       </div>
     </Card>
   );

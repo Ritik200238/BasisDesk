@@ -33,6 +33,11 @@ yarn-error.log*
 # env files (can opt-in for committing if needed)
 .env*
 
+# local build / dev logs
+/build_out.log
+/dev_out.log
+/dev_err.log
+
 # vercel
 .vercel
 

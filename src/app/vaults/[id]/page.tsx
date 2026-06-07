@@ -6,6 +6,9 @@ import type { RiskState } from "@/lib/core";
 import { escalateForFlow, getFlowRegime } from "@/lib/flows";
 import { formatBps, formatCompactUsd, formatPercent, formatPrice, formatSignedUsd } from "@/lib/format";
 import { getVaultById, getVaultQuote } from "@/lib/vault";
+import { Suspense } from "react";
+import { VaultNarration, VaultNarrationSkeleton } from "@/components/vault/VaultNarration";
+import type { NarrationInput } from "@/lib/ai/narrate";
 
 export const dynamic = "force-dynamic";
 
@@ -26,6 +29,26 @@ export default async function VaultDetailPage({ params }: { params: Promise<{ id
   const badgeState: RiskState = quoteRes.ok
     ? escalateForFlow(quoteRes.quote.risk.state, flowStance)
     : "calm";
+
+  const narrationInput: NarrationInput | null = quoteRes.ok
+    ? {
+        vaultName: vault.name,
+        symbol: vault.symbol,
+        fundingAprPct: quoteRes.quote.fundingAprOnNotional * 100,
+        fundingRateBpsPerHour: quoteRes.quote.fundingRatePerInterval * 10000,
+        riskState: badgeState,
+        riskReasons: quoteRes.quote.risk.reasons,
+        liquidationDistancePct: quoteRes.quote.liquidationDistance * 100,
+        flow:
+          flow.state === "ok"
+            ? {
+                headline: flow.regime.headline,
+                stance: flow.regime.stance,
+                latestNetInflowUsdM: flow.regime.latestNetInflowUsd / 1_000_000,
+              }
+            : null,
+      }
+    : null;
 
   return (
     <div className="flex flex-col gap-8">
@@ -86,6 +109,12 @@ export default async function VaultDetailPage({ params }: { params: Promise<{ id
             </div>
 
             <FlowBlock flow={flow} />
+
+            {narrationInput && (
+              <Suspense fallback={<VaultNarrationSkeleton />}>
+                <VaultNarration input={narrationInput} />
+              </Suspense>
+            )}
 
             <p className="text-micro leading-5 text-muted">{vault.blurb}</p>
           </div>

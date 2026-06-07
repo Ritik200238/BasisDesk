@@ -1,37 +1,42 @@
 import { Card, Skeleton } from "@/components/ui";
-import { getAllVaultQuotes } from "@/lib/vault";
+import { getFlowRegime } from "@/lib/flows";
+import { VAULTS, getAllVaultQuotes } from "@/lib/vault";
 import { VaultQuoteCard } from "./VaultQuoteCard";
 
-// Async server component: reads live SoDEX funding at request time and renders a quote per
-// vault. No wallet or API key required (public market data), so the cold-stranger first run
-// sees real numbers immediately.
+// Async server component: reads live SoDEX funding and SoSoValue ETF flows at request time
+// and renders a quote per vault. Funding (SoDEX) needs no key; the flow-driven de-risk signal
+// (SoSoValue) lights up once a key is set. No wallet required to view either.
 export async function VaultInsight() {
-  const results = await getAllVaultQuotes();
+  const [quotes, flows] = await Promise.all([
+    getAllVaultQuotes(),
+    Promise.all(VAULTS.map((v) => getFlowRegime(v.baseAsset))),
+  ]);
+
   return (
     <section className="flex flex-col gap-4">
       <div className="flex flex-col gap-1">
         <h2 className="text-lead font-medium text-foreground">Live market-neutral yield</h2>
         <p className="text-body text-muted">
-          Funding rates read live from SoDEX testnet and annualized by the deterministic
-          engine. No wallet needed to look.
+          Funding rates from SoDEX testnet, annualized by the deterministic engine. SoSoValue
+          ETF flows set the de-risk signal. No wallet needed to look.
         </p>
       </div>
       <div className="grid gap-4 sm:grid-cols-2">
-        {results.map((r) => (
-          <VaultQuoteCard key={r.ok ? r.quote.vault.id : r.vault.id} result={r} />
+        {quotes.map((q, i) => (
+          <VaultQuoteCard key={q.ok ? q.quote.vault.id : q.vault.id} result={q} flow={flows[i]} />
         ))}
       </div>
     </section>
   );
 }
 
-// Loading state shown while the live SoDEX read is in flight.
+// Loading state shown while the live SoDEX + SoSoValue reads are in flight.
 export function VaultInsightSkeleton() {
   return (
     <section className="flex flex-col gap-4">
       <div className="flex flex-col gap-1">
         <h2 className="text-lead font-medium text-foreground">Live market-neutral yield</h2>
-        <p className="text-body text-muted">Reading live funding from SoDEX testnet…</p>
+        <p className="text-body text-muted">Reading live funding and ETF flows…</p>
       </div>
       <div className="grid gap-4 sm:grid-cols-2">
         {[0, 1].map((i) => (
@@ -45,6 +50,7 @@ export function VaultInsightSkeleton() {
                 <Skeleton className="h-8" />
                 <Skeleton className="h-8" />
               </div>
+              <Skeleton className="h-12" />
             </div>
           </Card>
         ))}

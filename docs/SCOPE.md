@@ -3,13 +3,22 @@
 The wedge is one loop built deep: live data -> market-neutral quote -> deposit preview ->
 reviewed receipt. The default answer to a new feature is "backlog it."
 
-## Building now
+## Done
 
-- Live SoDEX funding -> market-neutral APR for BTC and ETH (done)
-- SoSoValue ETF-flow regime -> de-risk signal on the vault (done; needs a key to light up)
-- Vault detail with deposit preview + confirmation risk receipt (done)
-- Wallet connect (wagmi) + wrong-network handling
-- SoDEX EIP-712 order signing for execution (gated on testnet whitelist)
+- Live SoDEX funding -> market-neutral APR for BTC and ETH
+- SoSoValue ETF-flow regime -> de-risk signal on the vault (needs a key to light up)
+- Vault detail with deposit preview + confirmation risk receipt
+- Grounded AI narration of vault state (needs ANTHROPIC_API_KEY)
+
+## Blocked (needs external access or the exact schema)
+
+- Wallet connect (wagmi): builds, but a local Windows path-casing quirk loads React twice and
+  breaks hooks; verify on the Linux deploy environment before shipping.
+- SoDEX EIP-712 order signing: the exact typed-data schema is abstracted inside SoDEX's Go SDK
+  and not published; do not guess a signing scheme. Obtain it from a whitelisted account or the
+  SDK source, then build.
+- On-chain execution + redeem: gated on the SoDEX testnet whitelist plus the two items above.
+- Live demo deploy: needs a Vercel account connected to the repo.
 
 ## Later
 

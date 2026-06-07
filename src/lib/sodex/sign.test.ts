@@ -8,6 +8,7 @@ import {
   OrderType,
   PositionSide,
   TimeInForce,
+  buildPerpMarketOrder,
   computePayloadHash,
   newOrderActionPayloadJson,
   perpsDomain,
@@ -103,5 +104,35 @@ describe("SoDEX order signing", () => {
     const a = await signNewOrder({ request: exampleReq, nonce: BigInt(1), chainId: TESTNET_CHAIN, signTypedData: (x) => account.signTypedData(x) });
     const b = await signNewOrder({ request: exampleReq, nonce: BigInt(2), chainId: TESTNET_CHAIN, signTypedData: (x) => account.signTypedData(x) });
     expect(a.wireSignature).not.toBe(b.wireSignature);
+  });
+
+  it("builds and signs a vault short-hedge market order, round-tripping the signer", async () => {
+    const account = privateKeyToAccount(TEST_KEY);
+    const req = buildPerpMarketOrder({
+      accountID: 1001,
+      symbolID: 1,
+      clOrdID: "hedge-btc-1",
+      side: OrderSide.SELL,
+      quantity: "0.01",
+      positionSide: PositionSide.SHORT,
+    });
+    expect(req.orders[0].type).toBe(OrderType.MARKET);
+    expect(req.orders[0].side).toBe(OrderSide.SELL);
+
+    const nonce = BigInt(5);
+    const { wireSignature, payloadHash } = await signNewOrder({
+      request: req,
+      nonce,
+      chainId: TESTNET_CHAIN,
+      signTypedData: (x) => account.signTypedData(x),
+    });
+    const recovered = await recoverTypedDataAddress({
+      domain: perpsDomain(TESTNET_CHAIN),
+      types: EXCHANGE_ACTION_TYPES,
+      primaryType: "ExchangeAction",
+      message: { payloadHash, nonce },
+      signature: `0x${wireSignature.slice(4)}` as `0x${string}`,
+    });
+    expect(recovered.toLowerCase()).toBe(account.address.toLowerCase());
   });
 });

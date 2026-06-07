@@ -13,6 +13,9 @@ reviewed receipt. The default answer to a new feature is "backlog it."
 - Accumulated funding/flow history moat: cron snapshot + track record (store swappable for a DB)
 - Wallet connect (wagmi injected) + ValueChain network switch, verified in a clean-cased copy
   (production build green, runtime renders with no hook error)
+- SoDEX EIP-712 order signing, ported and verified from the public Go SDK (canonical JSON +
+  sign-to-recover round-trip); the wallet's signTypedData produces the identical digest, so
+  signing is non-custodial
 
 ## Verified
 
@@ -20,12 +23,11 @@ reviewed receipt. The default answer to a new feature is "backlog it."
   Linux deploy environment). A mixed-case Windows folder path is the only env that loads React
   twice; a normal clone or Vercel is unaffected.
 
-## Blocked (needs external access or the exact schema)
+## Blocked (needs external access)
 
-- SoDEX EIP-712 order signing: the exact typed-data schema is abstracted inside SoDEX's Go SDK
-  and not published; do not guess a signing scheme. Obtain it from a whitelisted account or the
-  SDK source, then build.
-- On-chain execution + redeem: gated on the SoDEX testnet whitelist plus the signing schema.
+- Order submission + redeem: the signing is built and verified; submitting the signed order
+  (POST with X-API-Key / X-API-Sign / X-API-Nonce, plus the account id and nonce from the user's
+  SoDEX account) needs a whitelisted testnet account. The signed wire signature is ready to attach.
 - Live demo deploy: needs a Vercel account connected to the repo.
 
 ## Later

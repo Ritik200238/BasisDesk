@@ -124,3 +124,33 @@ export async function signNewOrder(params: {
   const wireSignature = `0x01${signature.slice(2)}` as Hex;
   return { wireSignature, payloadHash, payloadJson };
 }
+
+// Convenience: a single-leg market order. The vault's short hedge is a market SELL on the
+// SHORT position side. symbolID is the numeric market id from GET /markets/symbols; accountID
+// and the nonce come from the user's SoDEX account (both require testnet access).
+export function buildPerpMarketOrder(params: {
+  accountID: number;
+  symbolID: number;
+  clOrdID: string;
+  side: number;
+  quantity: string;
+  positionSide: number;
+  reduceOnly?: boolean;
+}): NewOrderRequestInput {
+  return {
+    accountID: params.accountID,
+    symbolID: params.symbolID,
+    orders: [
+      {
+        clOrdID: params.clOrdID,
+        modifier: OrderModifier.NORMAL,
+        side: params.side,
+        type: OrderType.MARKET,
+        timeInForce: TimeInForce.IOC,
+        quantity: params.quantity,
+        reduceOnly: params.reduceOnly ?? false,
+        positionSide: params.positionSide,
+      },
+    ],
+  };
+}

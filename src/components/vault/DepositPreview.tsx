@@ -163,8 +163,9 @@ function ConfirmReceipt({
         </li>
       </ul>
       <p className="rounded-md border border-border bg-surface px-3 py-2 text-micro leading-5 text-muted">
-        Execution opens once SoDEX testnet access is enabled for your wallet. Signing happens in
-        your wallet — BasisDesk never holds your keys or funds.
+        Order signing and submission are implemented and tested against the SoDEX SDK; they
+        activate once your wallet has SoDEX testnet access. Signing happens in your wallet —
+        BasisDesk never holds your keys or funds.
       </p>
       <Button variant="secondary" onClick={onCancel}>
         Back

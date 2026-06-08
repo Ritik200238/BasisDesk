@@ -1,111 +1,230 @@
+<div align="center">
+
 # BasisDesk
 
-**Live: https://basisdesk.vercel.app**
+**Delta-neutral on-chain yield.** Hold the asset, short the matching SoDEX perpetual in equal size, and harvest the funding rate — while net price exposure stays near zero.
 
-Delta-neutral yield, on-chain. Hold the asset, short the matching SoDEX perpetual in equal
-size, and earn the funding rate while net price exposure stays near zero. SoSoValue spot-ETF
-flow data sets the de-risk signal.
+[![Live demo](https://img.shields.io/badge/demo-basisdesk.vercel.app-E8A838?style=flat-square)](https://basisdesk.vercel.app)
+[![License: MIT](https://img.shields.io/badge/license-MIT-3b82f6?style=flat-square)](LICENSE)
+[![Tests](https://img.shields.io/badge/tests-68%20passing-3fb950?style=flat-square)](#testing)
+[![Next.js 15.5](https://img.shields.io/badge/Next.js-15.5-111?style=flat-square)](https://nextjs.org)
+[![TypeScript](https://img.shields.io/badge/TypeScript-strict-3178c6?style=flat-square)](https://www.typescriptlang.org)
 
-BasisDesk is for a crypto holder who wants a steady, hedged return on BTC or ETH without
-day-trading and without the price risk of just holding. The same basis trade that grew
-Ethena to multi-billion scale, packaged as a vault and driven by live data.
+**[Open the live app →](https://basisdesk.vercel.app)**
+
+</div>
+
+<br/>
+
+![BasisDesk landing — live market-neutral funding across BTC, ETH, and SOL vaults](docs/assets/bd-home.png)
+
+---
+
+## What it is
+
+BasisDesk packages the **basis trade** — the same delta-neutral strategy that grew Ethena to multi-billion scale — as an on-chain vault driven by live data.
+
+For every unit of spot exposure the vault holds, it shorts one unit of the matching perpetual on [SoDEX](https://sodex.com). If price moves, the two legs cancel, so the position stays market-neutral. The yield is the **funding rate** the short collects each hour — paid by crowded longs, not by token inflation. [SoSoValue](https://sosovalue.com) spot-ETF flow data decides when to step back: when institutions turn to net outflows, the vault's de-risk signal escalates.
+
+> One user, one job: a crypto holder who wants a steady, hedged return on BTC, ETH, or SOL — without day-trading and without the price risk of just holding.
+
+## Why it matters
+
+Most "yield" in crypto is either directional risk in disguise or inflationary token emissions. The basis trade is different: a hedged position whose return comes from market structure (funding), with price risk engineered out. BasisDesk makes that strategy legible and auditable:
+
+- Every number on screen traces to a live API or on-chain read, with its source and timestamp.
+- All financial math runs in a deterministic, unit-tested core — never inside a language model.
+- It is non-custodial by construction: you sign every action in your own wallet, and keys never touch the backend.
 
 ## How it works
 
-For every unit of spot the vault holds, it shorts one unit of the perpetual. If price moves,
-the two legs cancel:
+Deposit `$1,000` into the BTC vault and the engine sizes the exact hedged position from the live mark price:
 
-- Deposit $1,000 into the BTC vault.
-- It buys ~$750 of BTC spot and posts ~$250 as margin to short an equal-sized BTC-USD perp at 3x.
-- BTC drops 20%: spot loses, the short gains the same amount. Net value barely moves.
-- The yield is the funding rate the short collects each hour — paid by crowded longs, not by token inflation.
+| Leg | What happens |
+| --- | --- |
+| **Long spot** | Buy ~`$750` of BTC |
+| **Short perp** | Post ~`$250` margin to short an equal-sized BTC-USD perpetual at 3x |
+| **If BTC drops 20%** | The spot leg loses; the short gains the same amount. Net value barely moves. |
+| **The yield** | The funding rate the short collects each hour, annualized to an APR |
 
-SoSoValue's daily ETF flows decide when to step back: when institutions turn to net outflows,
-the vault's de-risk signal escalates from calm to de-risk.
+When SoSoValue ETF flows turn to net outflows, the risk badge moves from **Calm** to **De-risk** and the vault proposes a defensive move. Nothing executes without your signature.
 
-## What is live right now
+## Key features
 
-- **Live funding to APY.** SoDEX testnet mark prices and funding rates are read per request and
-  annualized by a deterministic, unit-tested engine. The landing shows real BTC and ETH
-  market-neutral funding APR with source provenance — no wallet or key required.
-- **SoSoValue de-risk signal.** With a SoSoValue API key set, the daily ETF-flow regime
-  (inflow/outflow streaks, flips) drives each vault's risk badge. Without a key, the UI shows an
-  explicit connect-key state — never mock data.
-- **Deposit preview and risk receipt.** The vault detail page computes the exact hedged position
-  from the live mark price (spot qty, short notional, margin, liquidation price, entry fees,
-  zero entry delta) and a confirmation receipt that restates size, fees, and worst case.
-- **Honest gating.** On-chain execution requires SoDEX testnet access (whitelist) and a
-  connected wallet; signing is non-custodial and happens in the user's wallet. Until access is
-  granted, the flow stops at the reviewed receipt rather than a dead button.
+- **Live funding → APR.** SoDEX mark prices and funding rates are read per request and annualized by the deterministic engine. The landing shows real market-neutral funding APR with source provenance — no wallet or key required.
+- **Live market context.** A 48-hour price chart, open interest, and 24-hour volume per market, straight from SoDEX `klines` and `tickers`.
+- **Deposit preview + risk receipt.** The exact hedged position (spot quantity, short notional, margin, liquidation price, entry fees, zero entry delta) and a pre-trade receipt that restates size, fees, and worst case before you sign.
+- **Non-custodial execution.** The hedge order is signed in your wallet with EIP-712 and submitted to SoDEX. The signing scheme is ported and verified against SoDEX's public SDK — round-trip tested, not guessed.
+- **Portfolio + redeem.** A connected-wallet view of your SoDEX account equity, open positions, and funding earned, with one-signature position close.
+- **SoSoValue de-risk signal.** Daily ETF-flow regime (inflow/outflow streaks, flips) drives each vault's risk stance, plus the grounded news "why."
+- **Grounded AI narration.** An optional model narrates the figures the engine computed — it never does arithmetic, and every sentence cites its datapoint.
+
+## Screenshots
+
+| Vault detail — funding, live chart, deposit preview, risk receipt | Portfolio |
+| --- | --- |
+| ![Vault detail](docs/assets/bd-vault-detail.png) | ![Portfolio](docs/assets/bd-portfolio.png) |
 
 ## Architecture
 
+BasisDesk composes a pure finance core with typed data clients, behind Next.js server components that read live data per request. Every user-facing figure flows through the tested core, so the numbers are reproducible.
+
+```mermaid
+flowchart LR
+  subgraph live["Live sources"]
+    A1["SoDEX Trading API<br/>mark price · funding · OI · klines"]
+    A2["SoSoValue OpenAPI<br/>ETF flows · news"]
+  end
+  subgraph clients["Typed clients · zod-validated"]
+    B1["lib/sodex"]
+    B2["lib/sosovalue"]
+  end
+  subgraph core["Deterministic core · pure · tested"]
+    C1["sizing · delta · funding<br/>NAV · risk"]
+  end
+  subgraph domain["Domain"]
+    D1["lib/vault<br/>quote + preview"]
+    D2["lib/flows<br/>ETF regime"]
+  end
+  subgraph ui["Next.js App Router"]
+    E1["Server components<br/>(force-dynamic)"]
+    E2["Provenance-enforced<br/>design system"]
+  end
+  subgraph exec["Non-custodial execution"]
+    F1["Wallet EIP-712 signature"]
+    F2["/api/sodex/place-order"]
+  end
+
+  A1 --> B1
+  A2 --> B2
+  B1 --> C1
+  B1 --> D1
+  B2 --> D2
+  C1 --> D1
+  D1 --> E1
+  D2 --> E1
+  E1 --> E2
+  E2 --> F1
+  F1 --> F2
+  F2 --> A1
 ```
-src/lib/core/       deterministic finance engine (sizing, delta, funding, NAV, risk) - pure, tested
-src/lib/sodex/      SoDEX read client (markets, mark-prices, funding, positions) - verified vs live testnet
-src/lib/sosovalue/  SoSoValue OpenAPI client (ETF flows, news) - gated behind SOSOVALUE_API_KEY
-src/lib/flows/      ETF-flow regime engine: streak/flip detection -> de-risk stance
-src/lib/vault/      vault catalog + quote + deposit preview, composed from core + clients
-src/lib/format/     the single number-formatting module (dnum-backed, null-safe)
-src/components/      design-system primitives + vault UI
-src/app/            Next.js App Router (server components fetch live data per request)
-```
 
-All money math runs through `dnum` (bigint fixed-point), never IEEE floats. The LLM layer (when
-enabled) only narrates figures the engine has already computed — it never does arithmetic.
+**Layers**
 
-## Data sources
+1. **Deterministic core (`src/lib/core`)** — framework-free, network-free, fully unit-tested. Sizing, net delta, funding annualization, NAV (with a price-invariance property that proves market-neutrality), and risk classification. All money math uses `dnum` fixed-point.
+2. **Data clients** — `src/lib/sodex` (public market data + EIP-712 signing + order submission) and `src/lib/sosovalue` (ETF flows + news, gated behind `SOSOVALUE_API_KEY`). Each is a typed fetch with timeout, retry, 429 handling, and zod validation, returning a discriminated result so the UI renders real error states instead of throwing.
+3. **Domain (`src/lib/vault`, `src/lib/flows`)** — composes core + clients into product concepts: the vault quote, the deposit preview, and the ETF-flow regime that escalates risk to de-risk on outflows.
+4. **UI (`src/app`, `src/components`)** — App Router. Server components fetch live data per request and stream into a design system whose `ValueWithProvenance` primitive requires a `source`, so an unsourced number is structurally impossible.
 
-Every user-facing number traces to a real upstream (see `docs/CLAIMS.md`):
+See [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) for the full write-up and key decisions.
+
+## Data lineage
+
+Every user-facing number maps to a real upstream (full ledger in [`docs/CLAIMS.md`](docs/CLAIMS.md)):
 
 | Surface | Source |
 | --- | --- |
-| Funding rate, mark price, market spec | SoDEX GET /markets/mark-prices, /markets/symbols |
-| Funding APR, capital yield, liquidation, delta | deterministic core from the live mark + spec |
-| Institutional flow regime | SoSoValue GET /etfs/summary-history |
-| Grounded news | SoSoValue GET /news/featured |
+| Funding rate, mark price, OI, 24h volume, market spec | SoDEX `GET /markets/mark-prices`, `/markets/tickers`, `/markets/symbols`, `/markets/{symbol}/klines` |
+| Funding APR, capital yield, liquidation, delta, NAV | Deterministic core, from the live mark + spec |
+| Account id, equity, positions, funding earned | SoDEX `GET /accounts/{address}/{state,positions,fundings}` |
+| Institutional flow regime | SoSoValue `GET /etfs/summary-history` |
+| Grounded news | SoSoValue `GET /news/featured` |
+| Order signing + submission | EIP-712 on ValueChain (chainId 138565) → SoDEX `POST /api/v1/perps/trade/orders` |
 
-## Run it locally
+## Tech stack
+
+| Area | Choice |
+| --- | --- |
+| Framework | Next.js 15.5 (App Router), React 19 |
+| Language | TypeScript (strict) |
+| Styling | Tailwind v4, token-driven design system |
+| Money math | `dnum` (bigint fixed-point — no IEEE floats for amounts/prices) |
+| Validation | `zod` on every external response |
+| Wallet / signing | `wagmi` + `viem` (EIP-712, injected connector) |
+| AI (optional) | AI SDK + `@ai-sdk/anthropic`, JSON-schema-constrained |
+| Tests | Vitest |
+| Hosting | Vercel |
+
+## Project structure
+
+```
+src/lib/core/        deterministic finance engine (sizing, delta, funding, NAV, risk) — pure, tested
+src/lib/sodex/       SoDEX client: market data, EIP-712 signing, order submission
+src/lib/sosovalue/   SoSoValue OpenAPI client (ETF flows, news) — gated behind SOSOVALUE_API_KEY
+src/lib/flows/       ETF-flow regime engine: streak/flip detection -> de-risk stance
+src/lib/vault/       vault catalog + quote + deposit preview, composed from core + clients
+src/lib/format/      the single number-formatting module (dnum-backed, null-safe)
+src/components/       design-system primitives + vault UI
+src/app/              App Router pages + API routes (server components read live per request)
+docs/                 ARCHITECTURE, CLAIMS (data lineage), SCOPE, SUBMISSION
+```
+
+## Getting started
 
 Requires Node 20+ and pnpm.
 
 ```bash
+git clone https://github.com/Ritik200238/BasisDesk.git
+cd BasisDesk
 pnpm install
-cp .env.example .env.local   # add SOSOVALUE_API_KEY to enable the flow signal (optional)
+cp .env.example .env.local   # optional keys; see below
 pnpm dev                     # http://localhost:3000
 ```
 
-SoDEX public market data needs no key, so the landing shows live funding immediately. Add a
-SoSoValue key to light up the de-risk signal.
+SoDEX public market data needs no key, so the landing shows live funding immediately. Add keys to light up the gated layers:
+
+| Variable | Enables |
+| --- | --- |
+| `SOSOVALUE_API_KEY` | Institutional-flow de-risk signal + grounded news |
+| `ANTHROPIC_API_KEY` | Grounded AI narration |
+| `CRON_SECRET` | Protects the funding/flow snapshot cron |
+
+> On Windows, if local dev shows a React hook error, the folder path is mixed-case — run from a consistently-cased path. A normal clone and Vercel are unaffected.
+
+### Testing
 
 ```bash
-pnpm test        # unit tests for the finance core, formatting, clients, flow regime
+pnpm test        # 68 unit tests: finance core, formatting, clients, flow regime, signing
 pnpm typecheck   # tsc --noEmit
 ```
 
-## Deploy
+The signing module is verified the way SoDEX's own SDK tests verify it: the canonical order JSON matches the spec byte-for-byte, and a sign → recover round-trip returns the signer address.
 
-Import the repo on Vercel (Next.js is auto-detected; pnpm is used from the lockfile). The base
-demo needs no env vars, since SoDEX funding is public. Add `SOSOVALUE_API_KEY` for the flow
-signal and news, `ANTHROPIC_API_KEY` for AI narration, and `CRON_SECRET` to protect the snapshot
-cron. `vercel.json` schedules `/api/cron/snapshot` daily to accumulate funding/flow history.
+## Deployment
 
-The production build is verified green; if local dev shows a React hook error on Windows, the
-folder path is mixed-case — run from a consistently-cased path. A normal clone and Vercel are
-unaffected.
+Deploys on Vercel. Next.js is auto-detected and pnpm is used from the lockfile. The base demo needs no environment variables, since SoDEX market data is public. Add the keys above in **Project → Settings → Environment Variables** to enable the gated layers. `vercel.json` schedules `/api/cron/snapshot` daily to accumulate funding/flow history.
 
-## Stack
+```bash
+vercel deploy --prod
+```
 
-Next.js 15.5 (App Router), React 19, TypeScript, Tailwind v4, dnum, zod, wagmi/viem, Vitest.
-Deploys on Vercel.
+## Security & privacy
+
+- **Non-custodial by construction.** The backend only ever sees public addresses and signed intents. There is no code path that accepts a private key, and signing happens entirely in the user's wallet.
+- **Gated, never mocked.** A missing key or a failed upstream renders an explicit state with the reason — never a fabricated value. Enforced at the client (typed error kinds) and the UI (loading / empty / error / stale / populated states per surface).
+- **Hardened responses.** Content-Security-Policy, HSTS, `X-Frame-Options: DENY`, `X-Content-Type-Options`, Referrer-Policy, and Permissions-Policy on every response.
+- **Validated, rate-limited routes.** The order-submission route validates the full payload and the `0x01` wire-signature shape with zod, behind a per-IP rate limit.
+- **Pre-trade confirmation.** Every fund-moving action passes a receipt restating action, size, estimated fees, and worst-case downside before signing.
 
 ## Status
 
-Live: read-only insight (funding + flow), deposit preview, confirmation receipt.
-In progress: wallet connect, SoDEX EIP-712 order signing (gated on testnet whitelist), grounded
-AI narration, accumulated funding/flow history. See `docs/SCOPE.md`.
+- **Live:** read-only insight (funding, market charts, flow), deposit preview + risk receipt, non-custodial sign-and-submit (verified against SoDEX testnet), connected-wallet portfolio + redeem.
+- **Gated on external access:** the SoSoValue and AI layers light up when their keys are set; live order acceptance requires a whitelisted SoDEX testnet account (the full sign-and-submit path is built and verified up to that gate).
 
-## Disclaimers
+See [`docs/SCOPE.md`](docs/SCOPE.md) for the running build ledger.
 
-Not financial advice, and not an offer or solicitation. BasisDesk is non-custodial — it never
-holds keys or funds. Crypto markets carry risk, including total loss of capital. Testnet only.
+## Contributing
+
+Issues and pull requests are welcome. Before a PR: `pnpm test` and `pnpm typecheck` must pass, every user-facing number must trace to a real source, and changes follow the operating rules in [`CLAUDE.md`](CLAUDE.md) (real data only, deterministic math, provenance on every figure).
+
+## License
+
+[MIT](LICENSE) © 2026 Ritik Pandey
+
+## Author
+
+Built by **Ritik Pandey** — [@Ritik200238](https://github.com/Ritik200238).
+
+## Disclaimer
+
+Not financial advice, and not an offer or solicitation. BasisDesk is non-custodial and never holds keys or funds. Crypto markets carry risk, including total loss of capital. Testnet only.

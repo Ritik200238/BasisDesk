@@ -4,10 +4,14 @@
 import { perpsUrl } from "./config";
 import { getJson, type SodexResult } from "./http";
 import {
+  klinesSchema,
   markPricesSchema,
   perpSymbolsSchema,
+  tickersSchema,
+  type Kline,
   type MarkPrice,
   type PerpSymbol,
+  type Ticker,
 } from "./schemas";
 
 // GET /markets/symbols — the tradable perp universe (BTC-USD, ETH-USD, ...). Each entry
@@ -42,4 +46,29 @@ export async function getMarkPrice(symbol: string): Promise<SodexResult<MarkPric
     return { ok: false, error: { kind: "upstream", message: `No mark price returned for ${symbol}` } };
   }
   return { ok: true, data: item, asOf: res.asOf };
+}
+
+// GET /markets/tickers — 24h stats + live funding/OI for every perp.
+export function getTickers(): Promise<SodexResult<Ticker[]>> {
+  return getJson(perpsUrl("/markets/tickers"), tickersSchema);
+}
+
+// The 24h ticker for one symbol.
+export async function getTicker(symbol: string): Promise<SodexResult<Ticker>> {
+  const res = await getTickers();
+  if (!res.ok) return res;
+  const item = res.data.find((t) => t.symbol === symbol);
+  if (!item) {
+    return { ok: false, error: { kind: "upstream", message: `No ticker for ${symbol}` } };
+  }
+  return { ok: true, data: item, asOf: res.asOf };
+}
+
+// GET /markets/{symbol}/klines — OHLCV candles for a price chart (default last 48 hours).
+export function getKlines(
+  symbol: string,
+  interval = "1h",
+  limit = 48,
+): Promise<SodexResult<Kline[]>> {
+  return getJson(perpsUrl(`/markets/${symbol}/klines`, { interval, limit: String(limit) }), klinesSchema);
 }

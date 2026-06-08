@@ -5,11 +5,19 @@
 import { perpsUrl } from "./config";
 import { getJson, type SodexResult } from "./http";
 import {
+  accountStateSchema,
   fundingsSchema,
   positionsDataSchema,
+  type AccountState,
   type FundingEventRaw,
   type PerpPosition,
 } from "./schemas";
+
+// GET /accounts/{address}/state — resolves the SoDEX account id (aid) for any address. Reading
+// it needs no whitelist; trading with it still requires a funded, whitelisted account.
+export function getAccountState(address: string): Promise<SodexResult<AccountState>> {
+  return getJson(perpsUrl(`/accounts/${address}/state`), accountStateSchema);
+}
 
 // GET /accounts/{address}/positions — open perp positions incl. liquidation price.
 export async function getPositions(address: string): Promise<SodexResult<PerpPosition[]>> {

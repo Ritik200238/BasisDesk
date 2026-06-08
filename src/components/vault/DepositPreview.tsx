@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useAccount, useSignTypedData } from "wagmi";
 import { Button } from "@/components/ui";
 import { cn } from "@/lib/cn";
@@ -147,12 +147,32 @@ function ConfirmReceipt({
   preview: ReturnType<typeof computeDepositPreview>;
   onCancel: () => void;
 }) {
-  const { isConnected } = useAccount();
+  const { isConnected, address } = useAccount();
   const { signTypedDataAsync } = useSignTypedData();
   const [accountId, setAccountId] = useState("");
+  const [aidLoading, setAidLoading] = useState(false);
   const [exec, setExec] = useState<ExecState>("idle");
   const [execMsg, setExecMsg] = useState("");
   const [serverMsg, setServerMsg] = useState("");
+
+  // Auto-resolve the SoDEX account id (aid) from the connected wallet; still editable.
+  useEffect(() => {
+    if (!address) return;
+    let cancelled = false;
+    setAidLoading(true);
+    fetch(`/api/sodex/account?address=${address}`)
+      .then((r) => r.json())
+      .then((d: { ok?: boolean; aid?: number }) => {
+        if (!cancelled && d.ok && typeof d.aid === "number") setAccountId(String(d.aid));
+      })
+      .catch(() => {})
+      .finally(() => {
+        if (!cancelled) setAidLoading(false);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [address]);
 
   async function handleExecute() {
     if (props.symbolId == null) {
@@ -243,12 +263,12 @@ function ConfirmReceipt({
         ) : (
           <>
             <label htmlFor="acct" className="text-micro uppercase tracking-wide text-muted">
-              SoDEX account id
+              SoDEX account id {aidLoading ? "· resolving…" : "· auto-filled from your wallet"}
             </label>
             <input
               id="acct"
               inputMode="numeric"
-              placeholder="from your testnet account"
+              placeholder="resolving from your wallet…"
               value={accountId}
               onChange={(e) => setAccountId(e.target.value)}
               className="rounded-md border border-border-strong bg-background px-3 py-2 font-mono text-body text-foreground outline-none"

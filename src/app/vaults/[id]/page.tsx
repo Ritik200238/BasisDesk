@@ -7,6 +7,9 @@ import { escalateForFlow, getFlowRegime, getTopFlowNews, type FlowNewsResult } f
 import { getHistorySummary, type HistorySummary } from "@/lib/history";
 import { formatBps, formatCompactUsd, formatPercent, formatPrice, formatSignedUsd } from "@/lib/format";
 import { getVaultById, getVaultQuote } from "@/lib/vault";
+import { getKlines, getTicker, type Kline, type SodexResult, type Ticker } from "@/lib/sodex";
+import { PriceChart } from "@/components/vault/PriceChart";
+import { cn } from "@/lib/cn";
 import { Suspense } from "react";
 import { VaultNarration, VaultNarrationSkeleton } from "@/components/vault/VaultNarration";
 import type { NarrationInput } from "@/lib/ai/narrate";
@@ -21,11 +24,13 @@ export default async function VaultDetailPage({ params }: { params: Promise<{ id
   const vault = getVaultById(id);
   if (!vault) notFound();
 
-  const [quoteRes, flow, news, history] = await Promise.all([
+  const [quoteRes, flow, news, history, tickerRes, klinesRes] = await Promise.all([
     getVaultQuote(vault),
     getFlowRegime(vault.baseAsset),
     getTopFlowNews(vault.baseAsset),
     getHistorySummary(vault.baseAsset),
+    getTicker(vault.symbol),
+    getKlines(vault.symbol, "1h", 48),
   ]);
 
   const flowStance = flow.state === "ok" ? flow.regime.stance : undefined;
@@ -111,6 +116,8 @@ export default async function VaultDetailPage({ params }: { params: Promise<{ id
               />
             </div>
 
+            <MarketBlock symbol={vault.symbol} ticker={tickerRes} klines={klinesRes} />
+
             <FlowBlock flow={flow} news={news} />
 
             {narrationInput && (
@@ -189,6 +196,64 @@ function FlowBlock({
           {news.item.title}
         </a>
       )}
+    </div>
+  );
+}
+
+function MarketBlock({
+  symbol,
+  ticker,
+  klines,
+}: {
+  symbol: string;
+  ticker: SodexResult<Ticker>;
+  klines: SodexResult<Kline[]>;
+}) {
+  // klines arrive newest-first; reverse to read left-to-right in time.
+  const series = klines.ok
+    ? klines.data
+        .map((k) => Number(k.c))
+        .filter((n) => Number.isFinite(n))
+        .reverse()
+    : [];
+  const mark = ticker.ok ? Number(ticker.data.markPrice) : null;
+  const oiNotional =
+    ticker.ok && ticker.data.openInterest && mark ? Number(ticker.data.openInterest) * mark : null;
+  const vol = ticker.ok && ticker.data.quoteVolume ? Number(ticker.data.quoteVolume) : null;
+  const changePct = ticker.ok ? ticker.data.changePct ?? null : null;
+
+  return (
+    <div className="rounded-md border border-border bg-surface px-4 py-3">
+      <div className="flex items-center justify-between">
+        <span className="text-micro uppercase tracking-wide text-muted">
+          {symbol} · last 48h · SoDEX
+        </span>
+        {changePct != null && (
+          <span className={cn("font-mono text-micro", changePct >= 0 ? "text-up" : "text-down")}>
+            {changePct >= 0 ? "+" : ""}
+            {changePct.toFixed(2)}%
+          </span>
+        )}
+      </div>
+      {series.length >= 2 ? (
+        <PriceChart points={series} className="mt-2" />
+      ) : (
+        <p className="mt-2 text-micro text-muted">Price history unavailable.</p>
+      )}
+      <div className="mt-2 grid grid-cols-3 gap-2 border-t border-border pt-2">
+        <MiniStat label="Mark" value={mark != null ? formatPrice(mark, { dp: 0 }) : "—"} />
+        <MiniStat label="Open interest" value={oiNotional != null ? formatCompactUsd(oiNotional) : "—"} />
+        <MiniStat label="24h volume" value={vol != null ? formatCompactUsd(vol) : "—"} />
+      </div>
+    </div>
+  );
+}
+
+function MiniStat({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="flex flex-col gap-0.5">
+      <span className="text-micro uppercase tracking-wide text-faint">{label}</span>
+      <span className="font-mono text-body text-foreground">{value}</span>
     </div>
   );
 }

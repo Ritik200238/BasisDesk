@@ -76,6 +76,51 @@ export const perpPositionSchema = z.object({
 export type PerpPosition = z.infer<typeof perpPositionSchema>;
 export const positionsDataSchema = z.object({ positions: z.array(perpPositionSchema) });
 
+// GET /markets/tickers — 24h rolling stats plus live funding/OI per symbol. Probe-verified
+// against the testnet gateway. Product-critical fields required; descriptive extras optional.
+export const tickerSchema = z.object({
+  symbol: z.string(),
+  lastPx: z.string(),
+  openPx: z.string().optional(),
+  highPx: z.string().optional(),
+  lowPx: z.string().optional(),
+  volume: z.string().optional(),
+  quoteVolume: z.string().optional(),
+  change: z.string().optional(),
+  changePct: z.number().optional(),
+  markPrice: z.string(),
+  indexPrice: z.string().optional(),
+  fundingRate: z.string(),
+  openInterest: z.string().optional(),
+  nextFundingTime: z.coerce.number().optional(),
+});
+export type Ticker = z.infer<typeof tickerSchema>;
+export const tickersSchema = z.array(tickerSchema);
+
+// GET /markets/{symbol}/klines — OHLCV candles. Probe-verified: t (ms), o/h/l/c, v (base), q (quote).
+export const klineSchema = z.object({
+  t: z.coerce.number(),
+  o: z.string(),
+  h: z.string(),
+  l: z.string(),
+  c: z.string(),
+  v: z.string().optional(),
+  q: z.string().optional(),
+});
+export type Kline = z.infer<typeof klineSchema>;
+export const klinesSchema = z.array(klineSchema);
+
+// GET /accounts/{address}/state — derives the account id (aid) for any address, plus
+// margin/equity fields. Probe-verified: any address resolves to an aid (no whitelist to read).
+export const accountStateSchema = z.object({
+  user: z.string().optional(),
+  aid: z.number(),
+  uid: z.number().optional(),
+  av: z.string().optional(),
+  am: z.string().optional(),
+});
+export type AccountState = z.infer<typeof accountStateSchema>;
+
 // GET /accounts/{address}/fundings — realized funding. Doc-derived (see note above).
 export const fundingEventSchema = z.object({
   symbol: z.string(),

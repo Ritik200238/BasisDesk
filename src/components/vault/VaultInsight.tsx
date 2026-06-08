@@ -1,5 +1,6 @@
 import { Card, Skeleton } from "@/components/ui";
 import { getFlowRegime } from "@/lib/flows";
+import { getKlines } from "@/lib/sodex";
 import { VAULTS, getAllVaultQuotes } from "@/lib/vault";
 import { VaultQuoteCard } from "./VaultQuoteCard";
 
@@ -7,9 +8,10 @@ import { VaultQuoteCard } from "./VaultQuoteCard";
 // and renders a quote per vault. Funding (SoDEX) needs no key; the flow-driven de-risk signal
 // (SoSoValue) lights up once a key is set. No wallet required to view either.
 export async function VaultInsight() {
-  const [quotes, flows] = await Promise.all([
+  const [quotes, flows, klines] = await Promise.all([
     getAllVaultQuotes(),
     Promise.all(VAULTS.map((v) => getFlowRegime(v.baseAsset))),
+    Promise.all(VAULTS.map((v) => getKlines(v.symbol, "1h", 48))),
   ]);
 
   return (
@@ -22,9 +24,20 @@ export async function VaultInsight() {
         </p>
       </div>
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-        {quotes.map((q, i) => (
-          <VaultQuoteCard key={q.ok ? q.quote.vault.id : q.vault.id} result={q} flow={flows[i]} />
-        ))}
+        {quotes.map((q, i) => {
+          const kl = klines[i];
+          const series = kl?.ok
+            ? kl.data.map((k) => Number(k.c)).filter((n) => Number.isFinite(n)).reverse()
+            : undefined;
+          return (
+            <VaultQuoteCard
+              key={q.ok ? q.quote.vault.id : q.vault.id}
+              result={q}
+              flow={flows[i]}
+              priceSeries={series}
+            />
+          );
+        })}
       </div>
     </section>
   );

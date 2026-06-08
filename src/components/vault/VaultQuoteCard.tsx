@@ -6,6 +6,7 @@ import { formatBps, formatCompactUsd, formatPercent, formatPrice, formatSignedUs
 import type { SodexErrorKind } from "@/lib/sodex";
 import type { VaultQuoteResult } from "@/lib/vault";
 import { cn } from "@/lib/cn";
+import { PriceChart } from "./PriceChart";
 
 const RISK_VARIANT: Record<RiskState, BadgeVariant> = { calm: "calm", watch: "watch", derisk: "derisk" };
 const RISK_LABEL: Record<RiskState, string> = { calm: "Calm", watch: "Watch", derisk: "De-risk" };
@@ -47,9 +48,11 @@ function sodexErrorDetail(kind: SodexErrorKind): string {
 export function VaultQuoteCard({
   result,
   flow,
+  priceSeries,
 }: {
   result: VaultQuoteResult;
   flow: FlowRegimeResult;
+  priceSeries?: number[];
 }) {
   if (!result.ok) {
     return (
@@ -94,6 +97,15 @@ export function VaultQuoteCard({
           <Field label="Short liquidation room" value={formatPercent(q.liquidationDistance)} />
           <Field label="Next funding" value={mins == null ? "—" : `in ${mins}m`} />
         </div>
+
+        {priceSeries && priceSeries.length >= 2 && (
+          <div className="flex flex-col gap-1">
+            <span className="text-micro uppercase tracking-wide text-faint">
+              {q.vault.symbol} · 48h · SoDEX
+            </span>
+            <PriceChart points={priceSeries} className="h-8" />
+          </div>
+        )}
 
         <FlowSection flow={flow} />
 

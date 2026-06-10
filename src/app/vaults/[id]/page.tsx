@@ -200,7 +200,7 @@ function FlowBlock({
       )}
       {news.state === "ok" && news.item.title && (
         <a
-          href={news.item.source_link}
+          href={news.item.sourceLink ?? "#"}
           target="_blank"
           rel="noopener noreferrer"
           className="mt-2 block border-t border-border pt-2 text-micro leading-5 text-muted transition-colors hover:text-accent"

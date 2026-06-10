@@ -18,15 +18,46 @@ export const etfSummaryRecordSchema = z.object({
 export type EtfSummaryRecord = z.infer<typeof etfSummaryRecordSchema>;
 export const etfSummaryHistorySchema = z.array(etfSummaryRecordSchema);
 
-// GET /news/featured — fields used for the grounded "why". Doc-derived; verify with a key.
-export const newsItemSchema = z.object({
-  title: z.string().optional(),
-  source_link: z.string().optional(),
-  release_time: z.coerce.number().optional(),
-  matched_currencies: z.array(z.unknown()).optional(),
-});
+// GET /news/featured?pageNum=&pageSize= — verified against a live key. Items carry per-language
+// content (we surface English) and matchedCurrencies tags; the response is paginated under
+// data.list. We normalize each item to a flat, UI-friendly shape at parse time.
+export const newsItemSchema = z
+  .object({
+    id: z.string().optional(),
+    sourceLink: z.string().optional(),
+    releaseTime: z.coerce.number().optional(),
+    matchedCurrencies: z
+      .array(
+        z.object({
+          id: z.string().optional(),
+          name: z.string().optional(),
+          fullName: z.string().optional(),
+        }),
+      )
+      .optional(),
+    multilanguageContent: z
+      .array(
+        z.object({
+          language: z.string(),
+          title: z.string().optional(),
+          content: z.string().optional(),
+        }),
+      )
+      .optional(),
+  })
+  .transform((r) => {
+    const en = r.multilanguageContent?.find((m) => m.language === "en") ?? r.multilanguageContent?.[0];
+    return {
+      id: r.id ?? null,
+      title: en?.title ?? null,
+      content: en?.content ?? null,
+      sourceLink: r.sourceLink ?? null,
+      releaseTime: r.releaseTime ?? null,
+      currencies: (r.matchedCurrencies ?? []).map((c) => ({ name: c.name ?? null, fullName: c.fullName ?? null })),
+    };
+  });
 export type NewsItem = z.infer<typeof newsItemSchema>;
-// The list may be a bare array or { list: [...] }; accept either.
+// The response paginates under data.list; also accept a bare array for resilience.
 export const newsListSchema = z.union([
   z.array(newsItemSchema),
   z.object({ list: z.array(newsItemSchema) }).transform((o) => o.list),

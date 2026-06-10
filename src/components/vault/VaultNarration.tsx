@@ -2,7 +2,7 @@ import { Skeleton, ValueWithProvenance } from "@/components/ui";
 import { narrateVault, type NarrationInput } from "@/lib/ai/narrate";
 
 // Async server component: a grounded one-line explanation of the vault's state. The model
-// only restates figures the engine computed; gated behind ANTHROPIC_API_KEY.
+// only restates figures the engine computed; gated behind NVIDIA_API_KEY.
 export async function VaultNarration({ input }: { input: NarrationInput }) {
   const r = await narrateVault(input);
   return (
@@ -21,7 +21,7 @@ export async function VaultNarration({ input }: { input: NarrationInput }) {
         </div>
       ) : r.state === "not_configured" ? (
         <p className="mt-1.5 text-micro leading-5 text-muted">
-          Set ANTHROPIC_API_KEY to add a grounded one-line explanation. Every figure it cites is
+          Set NVIDIA_API_KEY to add a grounded one-line explanation. Every figure it cites is
           computed by the engine, not the model.
         </p>
       ) : (

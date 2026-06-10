@@ -29,11 +29,11 @@ describe("buildNarrationPrompt", () => {
 });
 
 describe("narrateVault gating", () => {
-  it("returns not_configured when ANTHROPIC_API_KEY is unset", async () => {
-    const prev = process.env.ANTHROPIC_API_KEY;
-    delete process.env.ANTHROPIC_API_KEY;
+  it("returns not_configured when NVIDIA_API_KEY is unset", async () => {
+    const prev = process.env.NVIDIA_API_KEY;
+    delete process.env.NVIDIA_API_KEY;
     const r = await narrateVault(input);
     expect(r.state).toBe("not_configured");
-    if (prev !== undefined) process.env.ANTHROPIC_API_KEY = prev;
+    if (prev !== undefined) process.env.NVIDIA_API_KEY = prev;
   });
 });

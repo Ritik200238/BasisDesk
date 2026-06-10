@@ -9,7 +9,7 @@ const input: NarrationInput = {
   riskState: "calm",
   riskReasons: ["delta within tolerance, ample liquidation headroom, funding positive"],
   liquidationDistancePct: 31.3,
-  flow: { headline: "Day 3 inflow streak", stance: "supportive", latestNetInflowUsdM: 211 },
+  flow: { headline: "Day 3 inflow streak", stance: "supportive", conviction: "high", latestNetInflowUsdM: 211 },
 };
 
 describe("buildNarrationPrompt", () => {

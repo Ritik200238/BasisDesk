@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { computeFlowRegime, escalateForFlow } from "./regime";
+import { computeFlowRegime, escalateForFlow, escalateForRegime } from "./regime";
 import type { EtfSummaryRecord } from "@/lib/sosovalue";
 
 function rec(date: string, inflow: number): EtfSummaryRecord {
@@ -45,6 +45,36 @@ describe("computeFlowRegime", () => {
 
   it("returns null on empty input", () => {
     expect(computeFlowRegime("BTC", [])).toBeNull();
+  });
+});
+
+describe("composite flow brain", () => {
+  const outflows = [
+    rec("2026-06-01", -300),
+    rec("2026-06-02", -250),
+    rec("2026-06-03", -400),
+    rec("2026-06-04", -350),
+    rec("2026-06-05", -500),
+  ];
+  const inflows = outflows.map((r) => ({ ...r, total_net_inflow: -r.total_net_inflow }));
+
+  it("a sustained outflow streak yields negative conviction and shrinks the suggested size", () => {
+    const r = computeFlowRegime("BTC", outflows)!;
+    expect(r.compositeScore).toBeLessThan(-0.4);
+    expect(r.conviction).toBe("high");
+    expect(r.sizeMultiplier).toBeLessThan(1);
+    expect(r.sizeMultiplier).toBeGreaterThanOrEqual(0.5);
+  });
+
+  it("a sustained inflow streak keeps full size", () => {
+    const r = computeFlowRegime("BTC", inflows)!;
+    expect(r.compositeScore).toBeGreaterThan(0.4);
+    expect(r.sizeMultiplier).toBe(1);
+  });
+
+  it("escalateForRegime pushes a high-conviction outflow straight to de-risk", () => {
+    expect(escalateForRegime("calm", computeFlowRegime("BTC", outflows)!)).toBe("derisk");
+    expect(escalateForRegime("calm", computeFlowRegime("BTC", inflows)!)).toBe("calm");
   });
 });
 

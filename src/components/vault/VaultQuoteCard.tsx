@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { Badge, type BadgeVariant, Card, ErrorState, Stat, ValueWithProvenance } from "@/components/ui";
 import type { RiskState } from "@/lib/core";
-import { escalateForFlow, type FlowRegimeResult, type FlowStance } from "@/lib/flows";
+import { escalateForRegime, type FlowRegimeResult, type FlowStance } from "@/lib/flows";
 import { formatBps, formatCompactUsd, formatPercent, formatPrice, formatSignedUsd } from "@/lib/format";
 import type { SodexErrorKind } from "@/lib/sodex";
 import type { VaultQuoteResult } from "@/lib/vault";
@@ -66,8 +66,7 @@ export function VaultQuoteCard({
   const apr = q.fundingAprOnNotional;
   const tone = apr >= 0 ? "up" : "down";
   const mins = minutesUntil(q.nextFundingTime, q.asOf);
-  const flowStance = flow.state === "ok" ? flow.regime.stance : undefined;
-  const badgeState = escalateForFlow(q.risk.state, flowStance);
+  const badgeState = escalateForRegime(q.risk.state, flow.state === "ok" ? flow.regime : undefined);
 
   return (
     <Card

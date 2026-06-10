@@ -17,7 +17,7 @@ export interface NarrationInput {
   riskState: string;
   riskReasons: string[];
   liquidationDistancePct: number;
-  flow: { headline: string; stance: string; latestNetInflowUsdM: number } | null;
+  flow: { headline: string; stance: string; conviction: string; latestNetInflowUsdM: number } | null;
 }
 
 export type NarrationResult =
@@ -62,7 +62,7 @@ export function buildNarrationPrompt(input: NarrationInput): string {
   if (input.flow) {
     const sign = input.flow.latestNetInflowUsdM >= 0 ? "+" : "";
     lines.push(
-      `Institutional ETF flow (SoSoValue): ${input.flow.headline}, stance ${input.flow.stance}, latest net ${sign}${input.flow.latestNetInflowUsdM.toFixed(0)}M USD.`,
+      `Institutional ETF flow (SoSoValue): ${input.flow.headline}, stance ${input.flow.stance} (${input.flow.conviction} conviction), latest net ${sign}${input.flow.latestNetInflowUsdM.toFixed(0)}M USD.`,
     );
   } else {
     lines.push("Institutional ETF flow: not available for this market.");

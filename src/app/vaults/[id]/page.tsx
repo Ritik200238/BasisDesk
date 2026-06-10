@@ -3,7 +3,7 @@ import { notFound } from "next/navigation";
 import { Badge, type BadgeVariant, Card, ErrorState, Stat, ValueWithProvenance } from "@/components/ui";
 import { DepositPreview } from "@/components/vault/DepositPreview";
 import type { RiskState } from "@/lib/core";
-import { escalateForFlow, getFlowRegime, getTopFlowNews, type FlowNewsResult } from "@/lib/flows";
+import { escalateForRegime, getFlowRegime, getTopFlowNews, type FlowNewsResult } from "@/lib/flows";
 import { getHistorySummary, type HistorySummary } from "@/lib/history";
 import { formatBps, formatCompactUsd, formatPercent, formatPrice, formatSignedUsd } from "@/lib/format";
 import { getVaultById, getVaultQuote } from "@/lib/vault";
@@ -34,9 +34,8 @@ export default async function VaultDetailPage({ params }: { params: Promise<{ id
     getKlines(vault.symbol, "1h", 48),
   ]);
 
-  const flowStance = flow.state === "ok" ? flow.regime.stance : undefined;
   const badgeState: RiskState = quoteRes.ok
-    ? escalateForFlow(quoteRes.quote.risk.state, flowStance)
+    ? escalateForRegime(quoteRes.quote.risk.state, flow.state === "ok" ? flow.regime : undefined)
     : "calm";
 
   const narrationInput: NarrationInput | null = quoteRes.ok
@@ -53,6 +52,7 @@ export default async function VaultDetailPage({ params }: { params: Promise<{ id
             ? {
                 headline: flow.regime.headline,
                 stance: flow.regime.stance,
+                conviction: flow.regime.conviction,
                 latestNetInflowUsdM: flow.regime.latestNetInflowUsd / 1_000_000,
               }
             : null,

@@ -45,14 +45,18 @@ SoSoValue key for the flow signal + news, and ANTHROPIC_API_KEY for AI narration
 
 ## 6. Wave changelog
 
-- Deterministic finance core (sizing, delta, funding, NAV price-invariance, risk) — 57 tests
-- Live SoDEX read client, verified against the testnet gateway
-- SoSoValue ETF-flow regime -> de-risk signal, plus the news "why" (two endpoints)
-- Three live vaults (BTC, ETH, SOL); live funding -> market-neutral APR on the landing
-- Vault detail: deposit preview + confirmation risk receipt
-- Grounded AI narration (gated); wallet connect + ValueChain network switch
-- Accumulated funding/flow history moat (cron snapshot + track record)
-- Funded-startup README + architecture/data-lineage/scope docs; production build verified green
+- Deterministic finance core (sizing, delta, funding, NAV price-invariance, risk, scenario) —
+  unit-tested (76 tests)
+- Ranked basis-trade board across 5 markets (BTC, ETH, SOL, gold, LINK) on real SoDEX **mainnet**
+  funding, with short-earns / short-pays favorability; execution on the testnet sandbox
+- SoSoValue brain (live): a multi-factor composite of ETF-flow direction, streak, magnitude, and
+  trend -> conviction + a position-size multiplier + graded de-risk; matched news as the "why"
+- Interactive neutrality simulator: drag the price, watch the hedge stay flat versus holding
+- EIP-712 order signing + submission, ported and verified against the public SoDEX SDK and the
+  live testnet (gated only on a whitelisted account)
+- Connected-wallet portfolio + one-signature redeem; live auto-refresh; post-action refetch
+- Grounded AI narration (live) via NVIDIA's OpenAI-compatible API
+- Deployed on Vercel; clean production build; provenance on every number
 
 ## How it maps to the judging criteria
 
@@ -62,14 +66,18 @@ SoSoValue key for the flow signal + news, and ANTHROPIC_API_KEY for AI narration
   confirmation receipt all run on real data; production build verified green.
 - **Logic, Workflow & Product Design (20%):** a clean data -> insight -> reviewed-decision loop
   on a deterministic, tested core; every figure is reproducible.
-- **Data / API Integration (15%):** SoSoValue is load-bearing across two endpoints (flows +
-  news); SoDEX market data is verified live; on-chain signing is wired.
-- **UX & Clarity (10%):** provenance on every number, five UI states per surface, honest gated
-  states, no slop (audited).
+- **Data / API Integration (15%):** SoSoValue is load-bearing — a multi-factor composite of its
+  ETF-flow data drives conviction, position sizing, and graded de-risk, with matched news as the
+  grounded "why." SoDEX mainnet market data + EIP-712 signing/submission are verified live; AI
+  narration runs on NVIDIA.
+- **UX & Clarity (10%):** provenance on every number, five UI states per surface, live
+  auto-refresh, honest states, no slop (audited).
 
 ## What is gated / pending external access
 
-- SoSoValue flow signal + news: set `SOSOVALUE_API_KEY` (Buildathon access form).
-- AI narration: set `ANTHROPIC_API_KEY`.
-- On-chain execution + redeem: needs SoDEX testnet whitelist + the EIP-712 order schema (from a
-  whitelisted account / the SDK) — the signing scheme is not guessed.
+- SoSoValue flow signal + news and AI narration: configured and **live** on the deployment.
+- On-chain order acceptance + redeem: built and verified end-to-end against the live testnet,
+  gated only on a whitelisted SoDEX testnet account (the signed request is confirmed correct, not
+  guessed).
+- A pooled multi-user vault (shared TVL, vault shares, other depositors) is deliberate future
+  scope; the current product is a per-wallet hedged-position tool on shared live market data.

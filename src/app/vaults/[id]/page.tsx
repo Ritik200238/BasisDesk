@@ -245,8 +245,7 @@ function MarketBlock({
         </span>
         {changePct != null && (
           <span className={cn("font-mono text-micro", changePct >= 0 ? "text-up" : "text-down")}>
-            {changePct >= 0 ? "+" : ""}
-            {changePct.toFixed(2)}%
+            {formatPercent(changePct / 100, { signed: true })}
           </span>
         )}
       </div>

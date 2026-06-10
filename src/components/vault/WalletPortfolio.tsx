@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
-import { useAccount, useSignTypedData } from "wagmi";
+import { useAccount, useSignTypedData, useSwitchChain } from "wagmi";
 import { Button, Card } from "@/components/ui";
 import { cn } from "@/lib/cn";
 import { formatPrice, formatSignedUsd, formatUsd } from "@/lib/format";
@@ -39,8 +39,10 @@ interface PortfolioData {
 }
 
 export function WalletPortfolio() {
-  const { isConnected, address } = useAccount();
+  const { isConnected, address, chainId } = useAccount();
   const { signTypedDataAsync } = useSignTypedData();
+  const { switchChain, isPending: switching } = useSwitchChain();
+  const wrongNetwork = isConnected && chainId !== VALUECHAIN_TESTNET_CHAIN_ID;
   const [data, setData] = useState<PortfolioData | null>(null);
   const [loading, setLoading] = useState(false);
   const [closing, setClosing] = useState<string | null>(null);
@@ -160,6 +162,22 @@ export function WalletPortfolio() {
         />
       </div>
 
+      {wrongNetwork && (
+        <div className="flex items-center justify-between rounded-md border border-warn/40 bg-warn/5 px-3 py-2.5">
+          <span className="text-micro leading-5 text-warn">
+            Wrong network — switch to ValueChain testnet to close a position.
+          </span>
+          <Button
+            variant="secondary"
+            className="h-8 px-3 text-micro"
+            onClick={() => switchChain({ chainId: VALUECHAIN_TESTNET_CHAIN_ID })}
+            disabled={switching}
+          >
+            {switching ? "Switching…" : "Switch"}
+          </Button>
+        </div>
+      )}
+
       <Card>
         <div className="flex items-center justify-between">
           <p className="text-body font-medium text-foreground">Open positions</p>
@@ -202,7 +220,7 @@ export function WalletPortfolio() {
                       variant="secondary"
                       className="h-8 px-3 text-micro"
                       onClick={() => closePosition(p)}
-                      disabled={closing === p.symbol || p.symbolId == null}
+                      disabled={closing === p.symbol || p.symbolId == null || wrongNetwork}
                     >
                       {closing === p.symbol ? "Closing…" : "Close position"}
                     </Button>

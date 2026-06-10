@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
-import { useAccount, useSignTypedData } from "wagmi";
+import { useAccount, useSignTypedData, useSwitchChain } from "wagmi";
 import { Button } from "@/components/ui";
 import { cn } from "@/lib/cn";
 import { formatPercent, formatPrice, formatQty, formatUsd } from "@/lib/format";
@@ -148,9 +148,11 @@ function ConfirmReceipt({
   preview: ReturnType<typeof computeDepositPreview>;
   onCancel: () => void;
 }) {
-  const { isConnected, address } = useAccount();
+  const { isConnected, address, chainId } = useAccount();
   const { signTypedDataAsync } = useSignTypedData();
+  const { switchChain, isPending: switching } = useSwitchChain();
   const router = useRouter();
+  const wrongNetwork = isConnected && chainId !== VALUECHAIN_TESTNET_CHAIN_ID;
   const [accountId, setAccountId] = useState("");
   const [aidLoading, setAidLoading] = useState(false);
   const [exec, setExec] = useState<ExecState>("idle");
@@ -276,13 +278,22 @@ function ConfirmReceipt({
               onChange={(e) => setAccountId(e.target.value)}
               className="rounded-md border border-border-strong bg-background px-3 py-2 font-mono text-body text-foreground outline-none"
             />
-            <Button onClick={handleExecute} disabled={busy}>
-              {exec === "signing"
-                ? "Sign in wallet…"
-                : exec === "submitting"
-                  ? "Placing…"
-                  : "Sign and place hedge"}
-            </Button>
+            {wrongNetwork ? (
+              <Button
+                onClick={() => switchChain({ chainId: VALUECHAIN_TESTNET_CHAIN_ID })}
+                disabled={switching}
+              >
+                {switching ? "Switching…" : "Switch to ValueChain testnet"}
+              </Button>
+            ) : (
+              <Button onClick={handleExecute} disabled={busy}>
+                {exec === "signing"
+                  ? "Sign in wallet…"
+                  : exec === "submitting"
+                    ? "Placing…"
+                    : "Sign and place hedge"}
+              </Button>
+            )}
             {exec === "error" && <p className="text-micro text-down">{execMsg}</p>}
             {exec === "done" && (
               <p className={cn("text-micro", serverMsg === "Hedge order placed." ? "text-up" : "text-warn")}>

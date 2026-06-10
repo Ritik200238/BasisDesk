@@ -24,6 +24,12 @@ export function Header() {
             >
               Portfolio
             </Link>
+            <Link
+              href="/methodology"
+              className="text-micro text-muted transition-colors hover:text-foreground"
+            >
+              Methodology
+            </Link>
           </nav>
         </div>
         <div className="flex items-center gap-3">

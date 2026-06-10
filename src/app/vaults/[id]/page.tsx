@@ -9,6 +9,7 @@ import { formatBps, formatCompactUsd, formatPercent, formatPrice, formatSignedUs
 import { getVaultById, getVaultQuote } from "@/lib/vault";
 import { getKlines, getTicker, type Kline, type SodexResult, type Ticker } from "@/lib/sodex";
 import { PriceChart } from "@/components/vault/PriceChart";
+import { NeutralitySimulator } from "@/components/vault/NeutralitySimulator";
 import { cn } from "@/lib/cn";
 import { Suspense } from "react";
 import { VaultNarration, VaultNarrationSkeleton } from "@/components/vault/VaultNarration";
@@ -83,7 +84,8 @@ export default async function VaultDetailPage({ params }: { params: Promise<{ id
           />
         </Card>
       ) : (
-        <div className="grid gap-6 lg:grid-cols-2">
+        <div className="flex flex-col gap-6">
+          <div className="grid gap-6 lg:grid-cols-2">
           <div className="flex flex-col gap-5">
             <Stat
               label="Funding APR (annualized, live)"
@@ -141,6 +143,17 @@ export default async function VaultDetailPage({ params }: { params: Promise<{ id
             maintenanceMarginRate={quoteRes.quote.maintenanceMarginRate}
             takerFee={quoteRes.quote.takerFee}
             fundingAprOnCapital={quoteRes.quote.fundingAprOnCapital}
+          />
+          </div>
+
+          <NeutralitySimulator
+            symbol={vault.symbol}
+            baseAsset={vault.baseAsset}
+            entryPrice={quoteRes.quote.markPrice}
+            leverage={vault.targetLeverage}
+            maintenanceMarginRate={quoteRes.quote.maintenanceMarginRate}
+            takerFee={quoteRes.quote.takerFee}
+            fundingAprOnNotional={quoteRes.quote.fundingAprOnNotional}
           />
         </div>
       )}

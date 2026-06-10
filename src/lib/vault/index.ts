@@ -3,3 +3,4 @@ export { VAULTS, getVaultById } from "./catalog";
 export { buildVaultQuote } from "./quote";
 export { getVaultQuote, getAllVaultQuotes, type VaultQuoteResult } from "./data";
 export { computeDepositPreview, type DepositPreview, type DepositPreviewInput } from "./preview";
+export { simulateScenario, type SimulateInput, type SimulateResult } from "./simulate";

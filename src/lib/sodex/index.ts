@@ -21,7 +21,7 @@ export {
 } from "./config";
 export { getJson, type SodexResult, type SodexError, type SodexErrorKind } from "./http";
 export * from "./schemas";
-export { getPerpSymbols, getMarketSpec, getMarkPrices, getMarkPrice, getTickers, getTicker, getKlines } from "./markets";
+export { getPerpSymbols, getMarketSpec, getMarkPrices, getMarkPrice, getTickers, getTicker, getKlines, getExecutionSymbolMap } from "./markets";
 export { getPositions, getFundingHistory, getAccountState } from "./account";
 export * from "./sign";
 export * from "./submit";

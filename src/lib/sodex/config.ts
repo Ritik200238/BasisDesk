@@ -9,11 +9,20 @@ export type SodexNetwork = "testnet" | "mainnet";
 const DEFAULT_TESTNET_GW = "https://testnet-gw.sodex.dev";
 const DEFAULT_MAINNET_GW = "https://mainnet-gw.sodex.dev";
 
-// Network defaults to testnet per Prime Directive 5 (SoDEX defaults to testnet; mainnet
-// only behind an explicit real-funds banner elsewhere in the app).
+// Execution network defaults to testnet per Prime Directive 5 (SoDEX defaults to testnet;
+// real-funds execution only behind an explicit banner). Account reads and the signed
+// write-path use this network.
 export function getNetwork(): SodexNetwork {
   const raw = (process.env.SODEX_NETWORK ?? "testnet").toLowerCase();
   return raw === "mainnet" ? "mainnet" : "testnet";
+}
+
+// Market-data network for public, read-only reads (mark prices, funding, symbols, klines,
+// tickers). Defaults to MAINNET so the displayed funding economics are the real, per-asset
+// rates — no funds are involved in a read. Execution stays on getNetwork() (testnet).
+export function getMarketDataNetwork(): SodexNetwork {
+  const raw = (process.env.SODEX_DATA_NETWORK ?? "mainnet").toLowerCase();
+  return raw === "testnet" ? "testnet" : "mainnet";
 }
 
 // The gateway origin (scheme + host), no path. SODEX_API_BASE overrides everything,

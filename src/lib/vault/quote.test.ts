@@ -30,7 +30,11 @@ const spec: PerpSymbol = {
 };
 
 describe("buildVaultQuote", () => {
-  const q = buildVaultQuote(vault, mark, spec, new Date("2026-06-07T00:00:00Z"));
+  const q = buildVaultQuote(vault, mark, spec, 1, new Date("2026-06-07T00:00:00Z"));
+
+  it("carries the execution-network symbolId for order placement", () => {
+    expect(q.symbolId).toBe(1);
+  });
 
   it("annualizes the hourly funding rate on notional", () => {
     // 0.0000125 * 8760 hours
@@ -58,7 +62,7 @@ describe("buildVaultQuote", () => {
 
   it("flags negative funding as a non-calm state", () => {
     const negMark: MarkPrice = { ...mark, fundingRate: "-0.00001" };
-    const nq = buildVaultQuote(vault, negMark, spec, new Date());
+    const nq = buildVaultQuote(vault, negMark, spec, 1, new Date());
     expect(nq.fundingPositive).toBe(false);
     expect(nq.fundingAprOnNotional).toBeLessThan(0);
     expect(nq.risk.state).not.toBe("calm");

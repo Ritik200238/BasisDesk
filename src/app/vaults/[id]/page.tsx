@@ -88,7 +88,7 @@ export default async function VaultDetailPage({ params }: { params: Promise<{ id
           <div className="grid gap-6 lg:grid-cols-2">
           <div className="flex flex-col gap-5">
             <Stat
-              label="Funding APR (annualized, live)"
+              label="Funding APR (live, mainnet)"
               value={
                 <ValueWithProvenance
                   value={formatPercent(quoteRes.quote.fundingAprOnNotional)}
@@ -97,7 +97,7 @@ export default async function VaultDetailPage({ params }: { params: Promise<{ id
                   freshness="live"
                 />
               }
-              context={`current ${formatBps(quoteRes.quote.fundingRatePerInterval, { dp: 2, signed: true })}/hr — varies`}
+              context={`${quoteRes.quote.fundingPositive ? "Short earns" : "Short pays"} · ${formatBps(quoteRes.quote.fundingRatePerInterval, { dp: 2, signed: true })}/hr — varies`}
               tone={quoteRes.quote.fundingAprOnNotional >= 0 ? "up" : "down"}
               size="display"
             />

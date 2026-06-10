@@ -77,7 +77,7 @@ export function VaultQuoteCard({
     >
       <div className="flex flex-col gap-4">
         <Stat
-          label="Funding APR (annualized, live)"
+          label="Funding APR (live, mainnet)"
           value={
             <ValueWithProvenance
               value={formatPercent(apr)}
@@ -86,7 +86,7 @@ export function VaultQuoteCard({
               freshness="live"
             />
           }
-          context={`from the current ${formatBps(q.fundingRatePerInterval, { dp: 2, signed: true })}/hr rate — varies`}
+          context={`${q.fundingPositive ? "Short earns" : "Short pays"} · ${formatBps(q.fundingRatePerInterval, { dp: 2, signed: true })}/hr — varies`}
           tone={tone}
           size="display"
         />

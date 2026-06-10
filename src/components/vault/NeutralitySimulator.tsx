@@ -104,10 +104,7 @@ export function NeutralitySimulator(props: NeutralitySimulatorProps) {
               <span className="font-mono text-up">{formatUsd(current.hedgedValueUsd, { dp: 0 })}</span>.
             </>
           ) : (
-            <>
-              both gain, but BasisDesk traded the upside for a flat,{" "}
-              <span className="font-mono text-up">{formatPercent(props.fundingAprOnNotional)}</span> funding yield.
-            </>
+            <>both gain, but BasisDesk traded the upside for a flat, hedged position.</>
           )}
         </p>
 
@@ -166,8 +163,8 @@ export function NeutralitySimulator(props: NeutralitySimulatorProps) {
           <Outcome
             label={`Funding (${HOLDING_DAYS}d)`}
             value={formatUsd(current.fundingEarnedUsd, { dp: 2 })}
-            sub="real yield"
-            tone="up"
+            sub={current.fundingEarnedUsd >= 0 ? "short earns" : "short pays"}
+            tone={current.fundingEarnedUsd >= 0 ? "up" : "down"}
           />
         </div>
 

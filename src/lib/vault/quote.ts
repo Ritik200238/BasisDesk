@@ -15,6 +15,7 @@ export function buildVaultQuote(
   vault: VaultDef,
   mark: MarkPrice,
   spec: PerpSymbol,
+  executionSymbolId: number | null,
   asOf: Date,
 ): VaultQuote {
   const markPrice = Number(mark.markPrice);
@@ -46,7 +47,8 @@ export function buildVaultQuote(
 
   return {
     vault,
-    symbolId: spec.id ?? null,
+    // Execution id from the testnet (sandbox) network, where any order is placed.
+    symbolId: executionSymbolId,
     markPrice,
     fundingRatePerInterval,
     fundingIntervalSec,
@@ -60,8 +62,8 @@ export function buildVaultQuote(
     risk,
     asOf: asOf.toISOString(),
     sources: {
-      markPrice: "SoDEX /markets/mark-prices",
-      spec: "SoDEX /markets/symbols",
+      markPrice: "SoDEX mainnet /markets/mark-prices",
+      spec: "SoDEX mainnet /markets/symbols",
     },
   };
 }

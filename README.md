@@ -51,7 +51,7 @@ When SoSoValue ETF flows turn to net outflows, the risk badge moves from **Calm*
 
 ## Key features
 
-- **Live funding → APR.** SoDEX mark prices and funding rates are read per request and annualized by the deterministic engine. The landing shows real market-neutral funding APR with source provenance — no wallet or key required.
+- **Live basis-trade board.** Real SoDEX mainnet funding per market (BTC, ETH, SOL, gold, LINK), annualized by the deterministic engine and ranked so the trades currently paying lead. Each vault shows whether the short earns or pays funding — no wallet or key required. Execution runs on the SoDEX testnet sandbox.
 - **Live market context.** A 48-hour price chart, open interest, and 24-hour volume per market, straight from SoDEX `klines` and `tickers`.
 - **Deposit preview + risk receipt.** The exact hedged position (spot quantity, short notional, margin, liquidation price, entry fees, zero entry delta) and a pre-trade receipt that restates size, fees, and worst case before you sign.
 - **Non-custodial execution.** The hedge order is signed in your wallet with EIP-712 and submitted to SoDEX. The signing scheme is ported and verified against SoDEX's public SDK — round-trip tested, not guessed.

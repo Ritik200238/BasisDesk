@@ -1,5 +1,6 @@
 import { Suspense } from "react";
 import { Card } from "@/components/ui";
+import { AutoRefresh } from "@/components/AutoRefresh";
 import { VaultInsight, VaultInsightSkeleton } from "@/components/vault/VaultInsight";
 
 // Live SoDEX funding is read per request, so render dynamically.
@@ -26,6 +27,7 @@ const MECHANICS = [
 export default function Home() {
   return (
     <div className="flex flex-col gap-12">
+      <AutoRefresh intervalMs={30_000} />
       <section className="flex flex-col gap-4 pt-4">
         <p className="text-micro uppercase tracking-wide text-accent">Delta-neutral yield</p>
         <h1 className="max-w-2xl text-display font-semibold leading-tight tracking-tight text-foreground">

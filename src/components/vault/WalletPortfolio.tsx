@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { useAccount, useSignTypedData } from "wagmi";
 import { Button, Card } from "@/components/ui";
 import { cn } from "@/lib/cn";
@@ -46,18 +46,34 @@ export function WalletPortfolio() {
   const [closing, setClosing] = useState<string | null>(null);
   const [closeMsg, setCloseMsg] = useState<{ symbol: string; text: string; ok: boolean } | null>(null);
 
+  // Monotonic request id so a slow earlier response can never overwrite a newer one.
+  const reqSeq = useRef(0);
+
   const load = useCallback(() => {
     if (!address) return;
+    const seq = ++reqSeq.current;
     setLoading(true);
     fetch(`/api/sodex/portfolio?address=${address}`)
       .then((r) => r.json())
-      .then((d: PortfolioData) => setData(d))
-      .catch(() => setData(null))
-      .finally(() => setLoading(false));
+      .then((d: PortfolioData) => {
+        if (seq === reqSeq.current) setData(d);
+      })
+      .catch(() => {
+        if (seq === reqSeq.current) setData(null);
+      })
+      .finally(() => {
+        if (seq === reqSeq.current) setLoading(false);
+      });
   }, [address]);
 
+  // Load on mount/address change, then poll while the tab is visible so positions and funding
+  // stay live without a manual refresh.
   useEffect(() => {
     load();
+    const timer = setInterval(() => {
+      if (document.visibilityState === "visible") load();
+    }, 30_000);
+    return () => clearInterval(timer);
   }, [load]);
 
   async function closePosition(p: PortfolioPosition) {

@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import { useRouter } from "next/navigation";
 import { useAccount, useSignTypedData } from "wagmi";
 import { Button } from "@/components/ui";
 import { cn } from "@/lib/cn";
@@ -149,6 +150,7 @@ function ConfirmReceipt({
 }) {
   const { isConnected, address } = useAccount();
   const { signTypedDataAsync } = useSignTypedData();
+  const router = useRouter();
   const [accountId, setAccountId] = useState("");
   const [aidLoading, setAidLoading] = useState(false);
   const [exec, setExec] = useState<ExecState>("idle");
@@ -220,6 +222,7 @@ function ConfirmReceipt({
       const code = data.body?.code;
       if (code === 0) {
         setServerMsg("Hedge order placed.");
+        router.refresh(); // re-pull live server data now that a position exists
       } else {
         setServerMsg(data.body?.error ?? "SoDEX rejected the order.");
       }

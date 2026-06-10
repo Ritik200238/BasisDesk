@@ -10,6 +10,7 @@ import { getVaultById, getVaultQuote } from "@/lib/vault";
 import { getKlines, getTicker, type Kline, type SodexResult, type Ticker } from "@/lib/sodex";
 import { PriceChart } from "@/components/vault/PriceChart";
 import { NeutralitySimulator } from "@/components/vault/NeutralitySimulator";
+import { AutoRefresh } from "@/components/AutoRefresh";
 import { cn } from "@/lib/cn";
 import { Suspense } from "react";
 import { VaultNarration, VaultNarrationSkeleton } from "@/components/vault/VaultNarration";
@@ -61,6 +62,7 @@ export default async function VaultDetailPage({ params }: { params: Promise<{ id
 
   return (
     <div className="flex flex-col gap-8">
+      <AutoRefresh intervalMs={30_000} />
       <div>
         <Link href="/" className="text-micro text-muted transition-colors hover:text-foreground">
           ← All vaults

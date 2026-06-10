@@ -108,12 +108,30 @@ async function callModel(prompt: string, apiKey: string, model: string, timeoutM
   }
 }
 
+// Cache successful narrations briefly so the live auto-refresh doesn't re-bill the model every
+// tick. Keyed by the figures that would actually change the text.
+const narrationCache = new Map<string, { at: number; result: NarrationResult }>();
+const NARRATION_TTL_MS = 5 * 60_000;
+
+function cacheKey(input: NarrationInput): string {
+  return [
+    input.symbol,
+    input.riskState,
+    Math.round(input.fundingAprPct * 10),
+    input.flow ? `${input.flow.stance}:${input.flow.headline}` : "noflow",
+  ].join("|");
+}
+
 export async function narrateVault(
   input: NarrationInput,
   now: Date = new Date(),
 ): Promise<NarrationResult> {
   const apiKey = process.env.NVIDIA_API_KEY?.trim();
   if (!apiKey) return { state: "not_configured" };
+
+  const key = cacheKey(input);
+  const cached = narrationCache.get(key);
+  if (cached && now.getTime() - cached.at < NARRATION_TTL_MS) return cached.result;
 
   const model = process.env.BASISDESK_AI_MODEL?.trim() || DEFAULT_MODEL;
   const prompt = buildNarrationPrompt(input);
@@ -124,7 +142,7 @@ export async function narrateVault(
       const raw = await callModel(prompt, apiKey, model);
       const parsed = narrationSchema.safeParse(raw);
       if (parsed.success) {
-        return {
+        const result: NarrationResult = {
           state: "ok",
           summary: parsed.data.summary,
           confidence: parsed.data.confidence,
@@ -132,6 +150,8 @@ export async function narrateVault(
           basis: buildBasis(input),
           asOf: now.toISOString(),
         };
+        narrationCache.set(key, { at: now.getTime(), result });
+        return result;
       }
       lastMessage = "AI returned an unexpected shape";
     } catch (err) {

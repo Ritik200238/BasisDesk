@@ -29,3 +29,36 @@ describe("summarizeHistory", () => {
     expect(s.fundingAprChange).toBeNull();
   });
 });
+
+describe("change detection", () => {
+  function snap2(
+    ts: number,
+    apr: number,
+    stance: "supportive" | "caution" | "neutral",
+  ): Snapshot {
+    return { ts, symbol: "BTC", fundingAprOnNotional: apr, flowStance: stance, latestNetInflowUsd: 1, flowStreakDays: 1 };
+  }
+
+  it("flags a funding flip from earning to paying", () => {
+    const s = summarizeHistory([snap2(1, 0.05, "supportive"), snap2(2, -0.03, "supportive")]);
+    expect(s.fundingFlipped).toBe(true);
+    expect(s.changeHeadline).toContain("paying");
+  });
+
+  it("flags a flow stance change", () => {
+    const s = summarizeHistory([snap2(1, 0.05, "supportive"), snap2(2, 0.05, "caution")]);
+    expect(s.stanceChanged).toBe(true);
+    expect(s.changeHeadline).toContain("caution");
+  });
+
+  it("reports a material funding move with no flip", () => {
+    const s = summarizeHistory([snap2(1, 0.1, "supportive"), snap2(2, 0.05, "supportive")]);
+    expect(s.fundingFlipped).toBe(false);
+    expect(s.changeHeadline).toContain("fell");
+  });
+
+  it("returns no headline when nothing material changed", () => {
+    const s = summarizeHistory([snap2(1, 0.1, "supportive"), snap2(2, 0.105, "supportive")]);
+    expect(s.changeHeadline).toBeNull();
+  });
+});

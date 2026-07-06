@@ -5,27 +5,28 @@ import { narrateVault, type NarrationInput } from "@/lib/ai/narrate";
 // only restates figures the engine computed; gated behind NVIDIA_API_KEY.
 export async function VaultNarration({ input }: { input: NarrationInput }) {
   const r = await narrateVault(input);
+  // Honest labelling: "· AI" only when the LLM actually wrote the text; the deterministic
+  // grounded fallback is labelled "· engine" so we never imply a model produced it.
+  const label = r.state === "ok" && r.origin === "engine" ? "What is happening · engine" : "What is happening · AI";
   return (
     <div className="rounded-md border border-border bg-surface px-4 py-3">
-      <span className="text-micro uppercase tracking-wide text-muted">What is happening · AI</span>
+      <span className="text-micro uppercase tracking-wide text-muted">{label}</span>
       {r.state === "ok" ? (
         <div className="mt-1.5 flex flex-col gap-1.5">
           <p className="text-body leading-5 text-foreground">{r.summary}</p>
           <p className="text-micro text-muted">{r.caveat}</p>
           <ValueWithProvenance
             value={<span className="text-micro text-faint">grounded in {r.basis.join(", ")}</span>}
-            source="BasisDesk engine + SoSoValue"
+            source={r.origin === "model" ? "NVIDIA narration + BasisDesk engine" : "BasisDesk engine"}
             asOf={r.asOf}
             freshness="recent"
           />
         </div>
-      ) : r.state === "not_configured" ? (
+      ) : (
         <p className="mt-1.5 text-micro leading-5 text-muted">
           Set NVIDIA_API_KEY to add a grounded one-line explanation. Every figure it cites is
           computed by the engine, not the model.
         </p>
-      ) : (
-        <p className="mt-1.5 text-micro text-muted">AI explanation unavailable right now.</p>
       )}
     </div>
   );

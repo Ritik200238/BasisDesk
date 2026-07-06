@@ -17,6 +17,8 @@ import { VaultNarration, VaultNarrationSkeleton } from "@/components/vault/Vault
 import type { NarrationInput } from "@/lib/ai/narrate";
 
 export const dynamic = "force-dynamic";
+// The grounded AI narration (NVIDIA) can take 20-40s on free-tier latency; give the render room.
+export const maxDuration = 60;
 
 const RISK_VARIANT: Record<RiskState, BadgeVariant> = { calm: "calm", watch: "watch", derisk: "derisk" };
 const RISK_LABEL: Record<RiskState, string> = { calm: "Calm", watch: "Watch", derisk: "De-risk" };

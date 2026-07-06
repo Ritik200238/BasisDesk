@@ -11,7 +11,16 @@ export function Header() {
       <div className="mx-auto flex h-14 w-full max-w-6xl items-center justify-between px-4">
         <div className="flex items-center gap-6">
           <Link href="/" className="flex items-center gap-2">
-            <span className="size-2.5 rounded-sm bg-accent" aria-hidden />
+            <svg viewBox="0 0 32 32" className="size-6 text-accent" fill="none" aria-hidden>
+              <path
+                d="M16 5 L27 16 L16 27 L5 16 Z"
+                stroke="currentColor"
+                strokeWidth="1.9"
+                strokeLinejoin="round"
+                opacity="0.8"
+              />
+              <path d="M8 16 H24" stroke="currentColor" strokeWidth="2.8" strokeLinecap="round" />
+            </svg>
             <span className="text-lead font-semibold tracking-tight text-foreground">BasisDesk</span>
           </Link>
           <nav className="hidden items-center gap-4 sm:flex">

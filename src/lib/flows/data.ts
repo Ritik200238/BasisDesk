@@ -48,7 +48,7 @@ export async function getFlowRegime(symbol: string): Promise<FlowRegimeResult> {
     // SoSoValue covers only certain crypto ETFs (BTC, ETH, SOL, LINK, …). An unsupported asset
     // such as gold (XAUT) is genuinely "no ETF data", not an upstream failure — surface it as
     // empty (and cache it) instead of a scary error state.
-    if (/invalid parameter: symbol|40000?3/i.test(res.error.message)) {
+    if (res.error.status === 400 || /invalid parameter|40000?3/i.test(res.error.message)) {
       const empty: FlowRegimeResult = { state: "empty" };
       flowCache.set(symbol, { at: Date.now(), result: empty });
       return empty;

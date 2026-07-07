@@ -171,7 +171,7 @@ export function NeutralitySimulator(props: NeutralitySimulatorProps) {
         <p className="text-micro leading-5 text-faint">
           ${CAPITAL.toLocaleString()} into the {props.symbol} hedge at {props.leverage}x, held {HOLDING_DAYS} days.
           The hedged line is flat because the spot and short legs cancel — the same price-invariant
-          math the deposit is signed against. The amber line is BasisDesk; the grey line is holding.
+          math the deposit is signed against. The blue line is BasisDesk; the grey line is holding.
         </p>
       </div>
     </div>

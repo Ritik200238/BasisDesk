@@ -14,32 +14,55 @@ const nextConfig: NextConfig = {
   async headers() {
     // Content-Security-Policy: keep script/style permissive enough for the Next.js runtime and
     // injected wallets, but lock framing, base-uri, and form-action. connect-src stays broad
-    // (https/wss) because an injected wallet may reach arbitrary chain RPCs.
-    const csp = [
+    // (https/wss) because an injected wallet may reach arbitrary chain RPCs. frame-ancestors
+    // 'self' lets the in-product /brandkit page frame the brand-kit document while cross-origin
+    // framing stays blocked (clickjacking protection retained). Fonts are self-hosted via
+    // next/font; the google-fonts hosts here exist only for the framed brand-kit document.
+    const appCsp = [
       "default-src 'self'",
       "script-src 'self' 'unsafe-inline' 'unsafe-eval'",
       "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
       "img-src 'self' data: https:",
       "font-src 'self' data: https://fonts.gstatic.com",
       "connect-src 'self' https: wss:",
-      // 'self' (not 'none') so the in-product /brandkit page can frame the static brand-kit
-      // document. Cross-origin framing stays blocked, preserving clickjacking protection.
       "frame-ancestors 'self'",
       "base-uri 'self'",
       "form-action 'self'",
       "object-src 'none'",
     ].join("; ");
+
+    // The brand-kit is a self-extracting bundled document that materialises its own assets as
+    // blob: URLs. Only this single static file gets the blob: relaxation; the financial app
+    // pages never do (they are matched by the negative-lookahead rule below).
+    const brandkitCsp = [
+      "default-src 'self'",
+      "script-src 'self' 'unsafe-inline' 'unsafe-eval' blob:",
+      "style-src 'self' 'unsafe-inline' blob: https://fonts.googleapis.com",
+      "img-src 'self' data: blob: https:",
+      "font-src 'self' data: blob: https://fonts.gstatic.com",
+      "connect-src 'self' blob: data: https:",
+      "worker-src 'self' blob:",
+      "frame-ancestors 'self'",
+      "base-uri 'self'",
+      "object-src 'none'",
+    ].join("; ");
+
+    const commonHeaders = [
+      { key: "X-Content-Type-Options", value: "nosniff" },
+      { key: "X-Frame-Options", value: "SAMEORIGIN" },
+      { key: "Referrer-Policy", value: "strict-origin-when-cross-origin" },
+      { key: "Permissions-Policy", value: "camera=(), microphone=(), geolocation=(), browsing-topics=()" },
+      { key: "Strict-Transport-Security", value: "max-age=63072000; includeSubDomains; preload" },
+    ];
+
     return [
       {
-        source: "/(.*)",
-        headers: [
-          { key: "Content-Security-Policy", value: csp },
-          { key: "X-Content-Type-Options", value: "nosniff" },
-          { key: "X-Frame-Options", value: "SAMEORIGIN" },
-          { key: "Referrer-Policy", value: "strict-origin-when-cross-origin" },
-          { key: "Permissions-Policy", value: "camera=(), microphone=(), geolocation=(), browsing-topics=()" },
-          { key: "Strict-Transport-Security", value: "max-age=63072000; includeSubDomains; preload" },
-        ],
+        source: "/brandkit.html",
+        headers: [{ key: "Content-Security-Policy", value: brandkitCsp }, ...commonHeaders],
+      },
+      {
+        source: "/((?!brandkit\\.html).*)",
+        headers: [{ key: "Content-Security-Policy", value: appCsp }, ...commonHeaders],
       },
     ];
   },

@@ -18,7 +18,7 @@ export function Button({ variant = "primary", className, type, ...rest }: Button
     <button
       type={type ?? "button"}
       className={cn(
-        "inline-flex h-9 items-center justify-center gap-2 rounded-md px-4 text-body font-medium transition-colors",
+        "inline-flex h-9 items-center justify-center gap-2 rounded-full px-5 text-body font-semibold transition-colors",
         "disabled:pointer-events-none disabled:opacity-50",
         variantClass[variant],
         className,

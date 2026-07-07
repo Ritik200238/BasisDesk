@@ -14,7 +14,13 @@ interface CardProps extends Omit<ComponentPropsWithoutRef<"div">, "title"> {
 export function Card({ title, subtitle, actions, className, children, ...rest }: CardProps) {
   const hasHeader = title != null || actions != null;
   return (
-    <div className={cn("rounded-lg border border-border bg-surface", className)} {...rest}>
+    <div
+      className={cn(
+        "rounded-lg border border-border bg-surface shadow-[0_1px_3px_rgba(11,11,12,0.04)]",
+        className,
+      )}
+      {...rest}
+    >
       {hasHeader && (
         <div className="flex items-start justify-between gap-3 border-b border-border px-4 py-3">
           <div className="min-w-0">

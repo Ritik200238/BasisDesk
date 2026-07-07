@@ -10,18 +10,26 @@ export function Header() {
     <header className="sticky top-0 z-20 border-b border-border bg-background/80 backdrop-blur">
       <div className="mx-auto flex h-14 w-full max-w-6xl items-center justify-between px-4">
         <div className="flex items-center gap-6">
-          <Link href="/" className="flex items-center gap-2">
-            <svg viewBox="0 0 32 32" className="size-6 text-accent" fill="none" aria-hidden>
+          <Link href="/" className="flex items-center gap-2.5">
+            <svg viewBox="0 0 120 120" className="size-7" fill="none" aria-hidden>
+              <rect x="18" y="52" width="84" height="7" rx="3.5" className="fill-foreground" />
+              <rect x="18" y="63" width="84" height="7" rx="3.5" className="fill-accent" />
               <path
-                d="M16 5 L27 16 L16 27 L5 16 Z"
-                stroke="currentColor"
-                strokeWidth="1.9"
+                d="M38 34 L22 50 M82 34 L98 50"
+                className="stroke-foreground"
+                strokeWidth="7"
+                strokeLinecap="round"
                 strokeLinejoin="round"
-                opacity="0.8"
               />
-              <path d="M8 16 H24" stroke="currentColor" strokeWidth="2.8" strokeLinecap="round" />
+              <path
+                d="M38 88 L22 72 M82 88 L98 72"
+                className="stroke-accent"
+                strokeWidth="7"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              />
             </svg>
-            <span className="text-lead font-semibold tracking-tight text-foreground">BasisDesk</span>
+            <span className="text-lead font-extrabold tracking-tight text-foreground">BasisDesk</span>
           </Link>
           <nav className="hidden items-center gap-4 sm:flex">
             <Link href="/" className="text-micro text-muted transition-colors hover:text-foreground">
@@ -38,6 +46,12 @@ export function Header() {
               className="text-micro text-muted transition-colors hover:text-foreground"
             >
               Methodology
+            </Link>
+            <Link
+              href="/brandkit"
+              className="text-micro text-muted transition-colors hover:text-foreground"
+            >
+              Brandkit
             </Link>
           </nav>
         </div>

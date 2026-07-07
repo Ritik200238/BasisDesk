@@ -1,4 +1,7 @@
-<svg width="512" height="512" viewBox="0 0 512 512" fill="none" xmlns="http://www.w3.org/2000/svg">
-  <path d="M256 80 L432 256 L256 432 L80 256 Z" stroke="#E8A838" stroke-width="28" stroke-linejoin="round" opacity="0.82"/>
-  <path d="M128 256 H384" stroke="#F5BE52" stroke-width="44" stroke-linecap="round"/>
+<svg width="120" height="120" viewBox="0 0 120 120" fill="none" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="BasisDesk mark">
+  
+  <rect x="18" y="52" width="84" height="7" rx="3.5" fill="#0B0B0C"></rect>
+  <rect x="18" y="63" width="84" height="7" rx="3.5" fill="#1B4DFF"></rect>
+  <path d="M38 34 L22 50 M82 34 L98 50" stroke="#0B0B0C" stroke-width="7" stroke-linecap="round" stroke-linejoin="round"></path>
+  <path d="M38 88 L22 72 M82 88 L98 72" stroke="#1B4DFF" stroke-width="7" stroke-linecap="round" stroke-linejoin="round"></path>
 </svg>

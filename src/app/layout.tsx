@@ -1,12 +1,14 @@
 import type { Metadata } from "next";
-import { Geist, IBM_Plex_Mono } from "next/font/google";
+import { Schibsted_Grotesk, IBM_Plex_Mono } from "next/font/google";
 import "./globals.css";
 import { Header } from "@/components/shell/Header";
 import { Footer } from "@/components/shell/Footer";
 import { Providers } from "@/components/wallet/Providers";
 
-const geistSans = Geist({
-  variable: "--font-geist-sans",
+// Schibsted Grotesk carries all text and headings — a variable font, so the full
+// 400–900 weight range is available for the dense editorial hierarchy.
+const schibsted = Schibsted_Grotesk({
+  variable: "--font-schibsted",
   subsets: ["latin"],
 });
 
@@ -32,7 +34,7 @@ export default function RootLayout({
   return (
     <html
       lang="en"
-      className={`${geistSans.variable} ${plexMono.variable} h-full antialiased`}
+      className={`${schibsted.variable} ${plexMono.variable} h-full antialiased`}
     >
       <body className="flex min-h-full flex-col">
         <Providers>

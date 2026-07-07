@@ -36,8 +36,8 @@ const nextConfig: NextConfig = {
     // pages never do (they are matched by the negative-lookahead rule below).
     const brandkitCsp = [
       "default-src 'self'",
-      "script-src 'self' 'unsafe-inline' 'unsafe-eval' blob:",
-      "style-src 'self' 'unsafe-inline' blob: https://fonts.googleapis.com",
+      "script-src 'self' 'unsafe-inline' 'unsafe-eval' blob: https://unpkg.com",
+      "style-src 'self' 'unsafe-inline' blob: https://fonts.googleapis.com https://unpkg.com",
       "img-src 'self' data: blob: https:",
       "font-src 'self' data: blob: https://fonts.gstatic.com",
       "connect-src 'self' blob: data: https:",

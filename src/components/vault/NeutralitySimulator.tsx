@@ -2,7 +2,7 @@
 
 import { useMemo, useState } from "react";
 import { cn } from "@/lib/cn";
-import { formatPercent, formatUsd } from "@/lib/format";
+import { formatPercent, formatPrice, formatUsd } from "@/lib/format";
 import { simulateScenario } from "@/lib/vault";
 
 interface NeutralitySimulatorProps {
@@ -92,7 +92,7 @@ export function NeutralitySimulator(props: NeutralitySimulatorProps) {
           <span className={cn("font-mono", pricePct >= 0 ? "text-up" : "text-down")}>
             {formatPercent(pricePct, { signed: true })}
           </span>{" "}
-          to {formatUsd(base.entryPrice * (1 + pricePct), { dp: 0 })} —{" "}
+          to {formatPrice(base.entryPrice * (1 + pricePct), { adaptive: true })} —{" "}
           {current.liquidated ? (
             <>
               past the short&apos;s liquidation, so the hedge breaks and you are left long {props.baseAsset}.

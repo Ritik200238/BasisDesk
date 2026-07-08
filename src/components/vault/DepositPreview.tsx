@@ -121,7 +121,7 @@ export function DepositPreview(props: DepositPreviewProps) {
             />
             <Row
               label="Short liquidation"
-              value={`${formatPrice(preview.liquidationPrice, { dp: 0 })} · ${formatPercent(preview.liquidationDistance)} away`}
+              value={`${formatPrice(preview.liquidationPrice, { adaptive: true })} · ${formatPercent(preview.liquidationDistance)} away`}
             />
             <Row label="Est. entry fees" value={formatUsd(preview.entryFeesUsd, { dp: 2 })} />
           </div>
@@ -254,7 +254,7 @@ function ConfirmReceipt({
         </li>
         <li>
           Worst case: a venue outage or a gap through{" "}
-          <strong className="text-foreground">{formatPrice(preview.liquidationPrice, { dp: 0 })}</strong> can break the
+          <strong className="text-foreground">{formatPrice(preview.liquidationPrice, { adaptive: true })}</strong> can break the
           hedge before it rebalances.
         </li>
       </ul>

@@ -209,9 +209,9 @@ export function WalletPortfolio() {
                     )}
                   </div>
                   <div className="mt-1 flex flex-wrap gap-x-4 gap-y-1 text-micro text-muted">
-                    <span>Entry {formatPrice(Number(p.entryPrice), { dp: 0 })}</span>
+                    <span>Entry {formatPrice(Number(p.entryPrice), { adaptive: true })}</span>
                     {p.liquidationPrice != null && (
-                      <span>Liq {formatPrice(Number(p.liquidationPrice), { dp: 0 })}</span>
+                      <span>Liq {formatPrice(Number(p.liquidationPrice), { adaptive: true })}</span>
                     )}
                     {p.leverage != null && <span>{p.leverage}x</span>}
                   </div>

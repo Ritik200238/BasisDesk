@@ -111,7 +111,7 @@ export default async function VaultDetailPage({ params }: { params: Promise<{ id
                 label={`Net on capital, ${vault.targetLeverage}x`}
                 value={formatPercent(quoteRes.quote.fundingAprOnCapital)}
               />
-              <SummaryField label="Mark price" value={formatPrice(quoteRes.quote.markPrice, { dp: 0 })} />
+              <SummaryField label="Mark price" value={formatPrice(quoteRes.quote.markPrice, { adaptive: true })} />
               <SummaryField
                 label="Short liquidation room"
                 value={formatPercent(quoteRes.quote.liquidationDistance)}
@@ -257,7 +257,7 @@ function MarketBlock({
         <p className="mt-2 text-micro text-muted">Price history unavailable.</p>
       )}
       <div className="mt-2 grid grid-cols-3 gap-2 border-t border-border pt-2">
-        <MiniStat label="Mark" value={mark != null ? formatPrice(mark, { dp: 0 }) : "—"} />
+        <MiniStat label="Mark" value={mark != null ? formatPrice(mark, { adaptive: true }) : "—"} />
         <MiniStat label="Open interest" value={oiNotional != null ? formatCompactUsd(oiNotional) : "—"} />
         <MiniStat label="24h volume" value={vol != null ? formatCompactUsd(vol) : "—"} />
       </div>

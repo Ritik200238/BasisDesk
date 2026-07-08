@@ -160,20 +160,42 @@ export function formatBps(value: number, opts: BpsOptions = {}): string {
 // ---------------------------------------------------------------------------
 
 export interface PriceOptions {
-  /** Fractional digits. Default 2; raise for low-priced assets. */
+  /** Fractional digits. Default 2; raise for low-priced assets. Ignored when `adaptive`. */
   dp?: number;
   /** Drop the "$" symbol. Default false. */
   noSymbol?: boolean;
+  /** Pick fractional digits by magnitude so a sub-dollar token is not rounded to "$0"
+   *  (0 for >=1000, 2 for >=1, 4/6/8 below). Overrides `dp`. */
+  adaptive?: boolean;
+}
+
+// Digits by price magnitude — a $0.073 token needs more precision than a $64k one. Magnitude
+// only picks the digit count, so the float coercion here never touches a displayed value.
+function adaptivePriceDigits(value: Money): number {
+  const n =
+    typeof value === "number"
+      ? Math.abs(value)
+      : isDnum(value)
+        ? Math.abs(Number(value[0])) / 10 ** value[1]
+        : NaN;
+  if (!Number.isFinite(n) || n === 0) return 2;
+  if (n >= 1000) return 0;
+  if (n >= 1) return 2;
+  if (n >= 0.01) return 4;
+  if (n >= 0.0001) return 6;
+  return 8;
 }
 
 /**
  * Format an instrument mark/entry price. Distinct from formatUsd so price precision can
  * differ from notional precision (e.g. a sub-dollar token may want dp: 4).
- *   formatPrice(64210.5)             // "$64,210.50"
- *   formatPrice(0.0731, { dp: 4 })   // "$0.0731"
+ *   formatPrice(64210.5)                 // "$64,210.50"
+ *   formatPrice(0.0731, { dp: 4 })       // "$0.0731"
+ *   formatPrice(0.073, { adaptive: true })  // "$0.0730"  (never "$0")
  */
 export function formatPrice(value: Money, opts: PriceOptions = {}): string {
-  const { dp = 2, noSymbol = false } = opts;
+  const { noSymbol = false, adaptive = false } = opts;
+  const dp = adaptive ? adaptivePriceDigits(value) : (opts.dp ?? 2);
   const body = dnFormat(coerceDnum(value), {
     digits: dp,
     trailingZeros: dp > 0,

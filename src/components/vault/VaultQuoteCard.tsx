@@ -92,7 +92,7 @@ export function VaultQuoteCard({
 
         <div className="grid grid-cols-2 gap-x-4 gap-y-3">
           <Field label={`Net on capital, ${q.vault.targetLeverage}x`} value={formatPercent(q.fundingAprOnCapital)} />
-          <Field label="Mark price" value={formatPrice(q.markPrice, { dp: 0 })} />
+          <Field label="Mark price" value={formatPrice(q.markPrice, { adaptive: true })} />
           <Field label="Short liquidation room" value={formatPercent(q.liquidationDistance)} />
           <Field label="Next funding" value={mins == null ? "—" : `in ${mins}m`} />
         </div>

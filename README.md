@@ -4,9 +4,9 @@
 
 **Delta-neutral on-chain yield.** Hold the asset, short the matching SoDEX perpetual in equal size, and harvest the funding rate — while net price exposure stays near zero.
 
-[![Live demo](https://img.shields.io/badge/demo-basisdesk.vercel.app-E8A838?style=flat-square)](https://basisdesk.vercel.app)
+[![Live demo](https://img.shields.io/badge/demo-basisdesk.vercel.app-1B4DFF?style=flat-square)](https://basisdesk.vercel.app)
 [![License: MIT](https://img.shields.io/badge/license-MIT-3b82f6?style=flat-square)](LICENSE)
-[![Tests](https://img.shields.io/badge/tests-68%20passing-3fb950?style=flat-square)](#testing)
+[![Tests](https://img.shields.io/badge/tests-80%20passing-3fb950?style=flat-square)](#testing)
 [![Next.js 15.5](https://img.shields.io/badge/Next.js-15.5-111?style=flat-square)](https://nextjs.org)
 [![TypeScript](https://img.shields.io/badge/TypeScript-strict-3178c6?style=flat-square)](https://www.typescriptlang.org)
 
@@ -16,7 +16,9 @@
 
 <br/>
 
-![BasisDesk landing — live market-neutral funding across BTC, ETH, and SOL vaults](docs/assets/bd-home.png)
+> **11 live markets on real SoDEX _mainnet_ funding data** — BTC, ETH, SOL, XRP, DOGE, AVAX, LTC, LINK, HBAR, SOSO, and gold, ranked live by funding yield. Fully usable **right now with no wallet**: the board, funding, ETF-flow signals, deposit preview, and neutrality simulator all render for a cold visitor. Order execution is signed **non-custodially** in your own wallet and runs on the SoDEX **testnet sandbox** — no real funds move in a demo. Every number is a live read or unit-tested math; **nothing on screen is mocked**.
+
+![BasisDesk landing — live market-neutral funding across 11 SoDEX markets](docs/assets/bd-home.png)
 
 ---
 
@@ -26,7 +28,7 @@ BasisDesk packages the **basis trade** — the same delta-neutral strategy that 
 
 For every unit of spot exposure the vault holds, it shorts one unit of the matching perpetual on [SoDEX](https://sodex.com). If price moves, the two legs cancel, so the position stays market-neutral. The yield is the **funding rate** the short collects each hour — paid by crowded longs, not by token inflation. [SoSoValue](https://sosovalue.com) spot-ETF flow data decides when to step back: when institutions turn to net outflows, the vault's de-risk signal escalates.
 
-> One user, one job: a crypto holder who wants a steady, hedged return on BTC, ETH, or SOL — without day-trading and without the price risk of just holding.
+> One user, one job: a crypto holder who wants a steady, hedged return on any of 11 live markets (BTC, ETH, SOL, XRP, DOGE, AVAX, LTC, LINK, HBAR, SOSO, gold) — without day-trading and without the price risk of just holding.
 
 ## Why it matters
 
@@ -51,7 +53,7 @@ When SoSoValue ETF flows turn to net outflows, the risk badge moves from **Calm*
 
 ## Key features
 
-- **Live basis-trade board.** Real SoDEX mainnet funding per market (BTC, ETH, SOL, gold, LINK), annualized by the deterministic engine and ranked so the trades currently paying lead. Each vault shows whether the short earns or pays funding — no wallet or key required. Execution runs on the SoDEX testnet sandbox.
+- **11 live markets on real mainnet data.** Real SoDEX **mainnet** funding for BTC, ETH, SOL, XRP, DOGE, AVAX, LTC, LINK, HBAR, SOSO, and gold — annualized by the deterministic engine and ranked so the trades currently paying lead. Each vault shows whether the short earns or pays funding, with no wallet or key required. Market data is live mainnet; order execution is signed non-custodially and runs on the SoDEX **testnet sandbox** (no real funds move).
 - **Live market context.** A 48-hour price chart, open interest, and 24-hour volume per market, straight from SoDEX `klines` and `tickers`.
 - **Deposit preview + risk receipt.** The exact hedged position (spot quantity, short notional, margin, liquidation price, entry fees, zero entry delta) and a pre-trade receipt that restates size, fees, and worst case before you sign.
 - **Non-custodial execution.** The hedge order is signed in your wallet with EIP-712 and submitted to SoDEX. The signing scheme is ported and verified against SoDEX's public SDK — round-trip tested, not guessed.
@@ -141,7 +143,7 @@ Every user-facing number maps to a real upstream (full ledger in [`docs/CLAIMS.m
 | Money math | `dnum` (bigint fixed-point — no IEEE floats for amounts/prices) |
 | Validation | `zod` on every external response |
 | Wallet / signing | `wagmi` + `viem` (EIP-712, injected connector) |
-| AI (optional) | AI SDK + `@ai-sdk/anthropic`, JSON-schema-constrained |
+| AI (optional) | NVIDIA (Llama 3.1 8B), JSON-schema-constrained, with a deterministic grounded fallback |
 | Tests | Vitest |
 | Hosting | Vercel |
 
@@ -176,7 +178,7 @@ SoDEX public market data needs no key, so the landing shows live funding immedia
 | Variable | Enables |
 | --- | --- |
 | `SOSOVALUE_API_KEY` | Institutional-flow de-risk signal + grounded news |
-| `ANTHROPIC_API_KEY` | Grounded AI narration |
+| `NVIDIA_API_KEY` | Grounded AI narration (Llama 3.1 8B); falls back to a deterministic grounded summary when unset |
 | `CRON_SECRET` | Protects the funding/flow snapshot cron |
 
 > On Windows, if local dev shows a React hook error, the folder path is mixed-case — run from a consistently-cased path. A normal clone and Vercel are unaffected.
@@ -184,7 +186,7 @@ SoDEX public market data needs no key, so the landing shows live funding immedia
 ### Testing
 
 ```bash
-pnpm test        # 68 unit tests: finance core, formatting, clients, flow regime, signing
+pnpm test        # 80 unit tests: finance core, formatting, clients, flow regime, signing
 pnpm typecheck   # tsc --noEmit
 ```
 
@@ -202,13 +204,13 @@ vercel deploy --prod
 
 - **Non-custodial by construction.** The backend only ever sees public addresses and signed intents. There is no code path that accepts a private key, and signing happens entirely in the user's wallet.
 - **Gated, never mocked.** A missing key or a failed upstream renders an explicit state with the reason — never a fabricated value. Enforced at the client (typed error kinds) and the UI (loading / empty / error / stale / populated states per surface).
-- **Hardened responses.** Content-Security-Policy, HSTS, `X-Frame-Options: DENY`, `X-Content-Type-Options`, Referrer-Policy, and Permissions-Policy on every response.
+- **Hardened responses.** Content-Security-Policy, HSTS, `X-Frame-Options: SAMEORIGIN`, `X-Content-Type-Options`, Referrer-Policy, and Permissions-Policy on every response.
 - **Validated, rate-limited routes.** The order-submission route validates the full payload and the `0x01` wire-signature shape with zod, behind a per-IP rate limit.
 - **Pre-trade confirmation.** Every fund-moving action passes a receipt restating action, size, estimated fees, and worst-case downside before signing.
 
 ## Status
 
-- **Live:** read-only insight (funding, market charts, flow), deposit preview + risk receipt, non-custodial sign-and-submit (verified against SoDEX testnet), connected-wallet portfolio + redeem.
+- **Live now, no wallet needed:** the 11-market board on real SoDEX **mainnet** funding, market charts, SoSoValue de-risk flow, deposit preview + risk receipt, and the neutrality simulator — all fully usable read-only. With a wallet: non-custodial sign-and-submit (verified against SoDEX) and the connected-wallet portfolio + redeem.
 - **Gated on external access:** the SoSoValue and AI layers light up when their keys are set; live order acceptance requires a whitelisted SoDEX testnet account (the full sign-and-submit path is built and verified up to that gate).
 
 See [`docs/SCOPE.md`](docs/SCOPE.md) for the running build ledger.
@@ -227,4 +229,4 @@ Built by **Ritik Pandey** — [@Ritik200238](https://github.com/Ritik200238).
 
 ## Disclaimer
 
-Not financial advice, and not an offer or solicitation. BasisDesk is non-custodial and never holds keys or funds. Crypto markets carry risk, including total loss of capital. Testnet only.
+Not financial advice, and not an offer or solicitation. BasisDesk is non-custodial and never holds keys or funds. Crypto markets carry risk, including total loss of capital. Market data is read live from SoDEX **mainnet**; order execution is signed non-custodially and runs on the SoDEX **testnet sandbox** — no real funds move.

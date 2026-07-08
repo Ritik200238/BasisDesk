@@ -1,5 +1,4 @@
 import Link from "next/link";
-import { Badge } from "@/components/ui";
 import { ConnectButton } from "@/components/wallet/ConnectButton";
 
 // Presentational top bar. The wallet connect control is added later (it needs the wagmi
@@ -56,7 +55,18 @@ export function Header() {
           </nav>
         </div>
         <div className="flex items-center gap-3">
-          <Badge variant="neutral">Testnet</Badge>
+          <span
+            className="hidden items-center gap-1.5 rounded-full border border-border-strong bg-surface px-2.5 py-1 text-micro font-semibold uppercase tracking-wide text-muted sm:inline-flex"
+            title="Market data is read live from SoDEX mainnet. Order execution is signed non-custodially on the SoDEX testnet sandbox — no real funds move."
+          >
+            <span className="size-1.5 rounded-full bg-up" aria-hidden />
+            Mainnet data
+            <span className="text-border-strong" aria-hidden>
+              ·
+            </span>
+            <span className="size-1.5 rounded-full bg-warn" aria-hidden />
+            Testnet exec
+          </span>
           <ConnectButton />
         </div>
       </div>

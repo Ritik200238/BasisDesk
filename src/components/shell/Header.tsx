@@ -35,6 +35,12 @@ export function Header() {
               Vaults
             </Link>
             <Link
+              href="/verify"
+              className="text-micro font-semibold text-accent transition-colors hover:text-accent-strong"
+            >
+              Verify
+            </Link>
+            <Link
               href="/portfolio"
               className="text-micro text-muted transition-colors hover:text-foreground"
             >

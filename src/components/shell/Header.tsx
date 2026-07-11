@@ -62,16 +62,11 @@ export function Header() {
         </div>
         <div className="flex items-center gap-3">
           <span
-            className="hidden items-center gap-1.5 rounded-full border border-border-strong bg-surface px-2.5 py-1 text-micro font-semibold uppercase tracking-wide text-muted sm:inline-flex"
-            title="Market data is read live from SoDEX mainnet. Order execution is signed non-custodially on the SoDEX testnet sandbox — no real funds move."
+            className="hidden items-center gap-1.5 rounded-full border border-up/40 bg-up/10 px-2.5 py-1 text-micro font-semibold uppercase tracking-wide text-up sm:inline-flex"
+            title="Market data is live from SoDEX mainnet. Order execution is sandboxed on the SoDEX testnet — no real funds move."
           >
             <span className="size-1.5 rounded-full bg-up" aria-hidden />
-            Mainnet data
-            <span className="text-border-strong" aria-hidden>
-              ·
-            </span>
-            <span className="size-1.5 rounded-full bg-warn" aria-hidden />
-            Testnet exec
+            Live · SoDEX mainnet
           </span>
           <ConnectButton />
         </div>
